@@ -3084,83 +3084,74 @@ void write_phylo_individual_data(file_struct *file_data_store, individual *indiv
 void write_population(patch_struct *patch, int patch_id, int year, int timestep, int run, char *output_file_directory){
 
     // Loop through the population in patch 0, saving IDs of alive adults
-    long n_id, n_alive_adults = 0, all_adults[patch[patch_id].id_counter];
-    for(n_id = 0; n_id < patch[patch_id].id_counter; n_id++){
-        /* Check that the person is not dead: */
-        if(patch[patch_id].individual_population[n_id].cd4 != DEAD){
-            if(patch[patch_id].individual_population[n_id].DoB < (year - AGE_ADULT)){
-            // Find size of all alive adults
-                all_adults[n_alive_adults++] = n_id;
-            }
-        }
-    }
-    long nsample = ceil(ANNUAL_SAMPLING_PROP*n_alive_adults);
-    long sampled_adults[nsample];
-    gsl_ran_choose( rng, sampled_adults, nsample, all_adults, n_alive_adults, sizeof(long) );
+    long idx;
     
     // Open file
     char filename[200];
     sprintf(filename, "%s/Population_patch%d_Run%d_%d_%d.csv", output_file_directory, patch_id, run, year, timestep);
     FILE *SAMPLE_FILE = fopen(filename, "w");
 
-    // Write header
-    fprintf(SAMPLE_FILE,
-"TimeOfSampling,ID,PATCH,DoB,SEX,HIV_status,DurationOfInfection,KassanjeeBiomarker,ACUTE,TimeOfInfection,TimeOfDiagnosis,ART_status,t_start_art,CD4_status,VirallySuppressed,ARVPresence,RiskGroup\n");
+    // Write header (over three lines for brevity)
+    fprintf(SAMPLE_FILE, "TimeOfSampling,ID,PATCH,DoB,SEX,HIV_status,DurationOfInfection,");
+    fprintf(SAMPLE_FILE, "KassanjeeBiomarker,ACUTE,TimeOfInfection,TimeOfDiagnosis,ART_status,");
+    fprintf(SAMPLE_FILE, "t_start_art,CD4_status,VirallySuppressed,ARVPresence,RiskGroup\n");
+
     // Write body
-    long i, idx;
-    for (i = 0; i < nsample; i++){
-        idx = sampled_adults[nsample - i - 1];
-        
-        fprintf(SAMPLE_FILE, "%f,", (double) year);
-        fprintf(SAMPLE_FILE, "%li,", patch[patch_id].individual_population[idx].id);
-        fprintf(SAMPLE_FILE, "%d,", 0);
-        fprintf(SAMPLE_FILE, "%f,", patch[patch_id].individual_population[idx].DoB);
-        if(patch[patch_id].individual_population[idx].gender == MALE){
-            fprintf(SAMPLE_FILE, "M,");
-        }else{
-            fprintf(SAMPLE_FILE, "F,");
-        }
-        if(patch[patch_id].individual_population[idx].HIV_status > UNINFECTED){
-            fprintf(SAMPLE_FILE, "%d,", 1);
-            fprintf(SAMPLE_FILE, "%f,", (double) year - patch[patch_id].individual_population[idx].t_sc);
-            fprintf(SAMPLE_FILE, "%f,", immune_biomarker_kassanjee(365.25*((double) year - patch[patch_id].individual_population[idx].t_sc)));
-        }else{
+    for(idx = 0; idx < patch[patch_id].id_counter; idx++){
+        /* Check that the person is not dead: */
+        if(patch[patch_id].individual_population[idx].cd4 != DEAD){
+            
+            fprintf(SAMPLE_FILE, "%f,", (double) year);
+            fprintf(SAMPLE_FILE, "%li,", patch[patch_id].individual_population[idx].id);
             fprintf(SAMPLE_FILE, "%d,", 0);
-            fprintf(SAMPLE_FILE, "%d,", -1);
-            fprintf(SAMPLE_FILE, "%d,", -1);
+            fprintf(SAMPLE_FILE, "%f,", patch[patch_id].individual_population[idx].DoB);
+            if(patch[patch_id].individual_population[idx].gender == MALE){
+                fprintf(SAMPLE_FILE, "M,");
+            }else{
+                fprintf(SAMPLE_FILE, "F,");
+            }
+            if(patch[patch_id].individual_population[idx].HIV_status > UNINFECTED){
+                fprintf(SAMPLE_FILE, "%d,", 1);
+                fprintf(SAMPLE_FILE, "%f,", (double) year - patch[patch_id].individual_population[idx].t_sc);
+                fprintf(SAMPLE_FILE, "%f,", immune_biomarker_kassanjee(365.25*((double) year - patch[patch_id].individual_population[idx].t_sc)));
+            }else{
+                fprintf(SAMPLE_FILE, "%d,", 0);
+                fprintf(SAMPLE_FILE, "%d,", -1);
+                fprintf(SAMPLE_FILE, "%d,", -1);
+            }
+            if(patch[patch_id].individual_population[idx].HIV_status == ACUTE){
+                fprintf(SAMPLE_FILE, "%d,", 1);
+            }else{
+                fprintf(SAMPLE_FILE, "%d,", 0);
+            }
+            fprintf(SAMPLE_FILE, "%f,", patch[patch_id].individual_population[idx].t_sc);
+            fprintf(SAMPLE_FILE, "%f,", patch[patch_id].individual_population[idx].PANGEA_t_diag);
+            fprintf(SAMPLE_FILE, "%d,", patch[patch_id].individual_population[idx].ART_status);
+            fprintf(SAMPLE_FILE, "%f,", patch[patch_id].individual_population[idx].t_start_art);
+            fprintf(SAMPLE_FILE, "%d,", patch[patch_id].individual_population[idx].cd4);
+            if(patch[patch_id].individual_population[idx].ART_status == LTART_VS){
+                fprintf(SAMPLE_FILE, "1,");
+            }else{
+                fprintf(SAMPLE_FILE, "0,");
+            }
+            if(
+                patch[patch_id].individual_population[idx].ART_status == LTART_VS || 
+                patch[patch_id].individual_population[idx].ART_status == LTART_VU || 
+                patch[patch_id].individual_population[idx].ART_status == EARLYART
+                ){
+                fprintf(SAMPLE_FILE, "1,");
+            }else{
+                fprintf(SAMPLE_FILE, "0,");
+            }
+            if(patch[patch_id].individual_population[idx].sex_risk == LOW)
+                fprintf(SAMPLE_FILE, "L");
+            if(patch[patch_id].individual_population[idx].sex_risk == MEDIUM)
+                fprintf(SAMPLE_FILE, "M");
+            if(patch[patch_id].individual_population[idx].sex_risk == HIGH)
+                fprintf(SAMPLE_FILE, "H");
+            
+            fprintf(SAMPLE_FILE, "\n");
         }
-        if(patch[patch_id].individual_population[idx].HIV_status == ACUTE){
-            fprintf(SAMPLE_FILE, "%d,", 1);
-        }else{
-            fprintf(SAMPLE_FILE, "%d,", 0);
-        }
-        fprintf(SAMPLE_FILE, "%f,", patch[patch_id].individual_population[idx].t_sc);
-        fprintf(SAMPLE_FILE, "%f,", patch[patch_id].individual_population[idx].PANGEA_t_diag);
-        fprintf(SAMPLE_FILE, "%d,", patch[patch_id].individual_population[idx].ART_status);
-        fprintf(SAMPLE_FILE, "%f,", patch[patch_id].individual_population[idx].t_start_art);
-        fprintf(SAMPLE_FILE, "%d,", patch[patch_id].individual_population[idx].cd4);
-        if(patch[patch_id].individual_population[idx].ART_status == LTART_VS){
-            fprintf(SAMPLE_FILE, "1,");
-        }else{
-            fprintf(SAMPLE_FILE, "0,");
-        }
-        if(
-            patch[patch_id].individual_population[idx].ART_status == LTART_VS || 
-            patch[patch_id].individual_population[idx].ART_status == LTART_VU || 
-            patch[patch_id].individual_population[idx].ART_status == EARLYART
-            ){
-            fprintf(SAMPLE_FILE, "1,");
-        }else{
-            fprintf(SAMPLE_FILE, "0,");
-        }
-        if(patch[patch_id].individual_population[idx].sex_risk == LOW)
-            fprintf(SAMPLE_FILE, "L");
-        if(patch[patch_id].individual_population[idx].sex_risk == MEDIUM)
-            fprintf(SAMPLE_FILE, "M");
-        if(patch[patch_id].individual_population[idx].sex_risk == HIGH)
-            fprintf(SAMPLE_FILE, "H");
-        
-        fprintf(SAMPLE_FILE, "\n");
     }
     fclose(SAMPLE_FILE);
 }
