@@ -25,7 +25,7 @@
 #include "output.h"
 #include "debug.h"
 
-
+double immune_biomarker_kassanjee(double );
 int get_spvl_cat(double );
 void draw_inital_SPVL(individual *, parameters *);
 void inherit_spvl(individual *, individual *, parameters *);

@@ -21,6 +21,7 @@
 #include "demographics.h"
 #include "hiv.h"
 
+void write_population(patch_struct *, int, int, int, int, char *);
 void print_individual(individual *);
 void print_population(population_size *);
 void print_population_from_one_year_data(population_size *, population_size_one_year_age *);

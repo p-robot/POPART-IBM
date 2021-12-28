@@ -147,6 +147,8 @@ struct individual{
        - adherence; // Expected level of adherence to ART, loss-to-follow-up, etc.
        - double spatial_coords[2]; // Think of a simple measure (e.g. distance to travel to healthcare centre, time to travel to health-care centre) which we can get in practice.
      */
+
+    double immune_biomarker; // Value of immune biomarker (e.g. Kassanjee et al., 2017)
 };
 
 

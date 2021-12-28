@@ -54,6 +54,14 @@
 #include "debug.h"
 #include "pc.h"
 
+/* Function: immune_biomarker_kassanjee()
+Generate immune biomarker value according to 'base case' of Kassanjee et al., (2017)
+*/
+double immune_biomarker_kassanjee(double t_days){
+    return (double) 85 * (double) 1/( (double) 1 + pow((t_days/ (double) 190), -4.0));
+}
+
+
 /* Function: get_spvl_cat()
 
 Return set-point viral load (SPVL) category given SPVL.  SPVL categories are as follows:
@@ -3045,7 +3053,6 @@ void virally_suppressed_process(individual* indiv, parameters *param, double t, 
     //printf("virally_suppressed_process is_popart= %i\n",is_popart);
 
     indiv->ART_status = LTART_VS;
-
 
     if(indiv->id==FOLLOW_INDIVIDUAL && indiv->patch_no==FOLLOW_PATCH){
         printf("Adult %ld has become VS at time %6.4f. Next HIV event is now %i\n",indiv->id,t,indiv->next_HIV_event);

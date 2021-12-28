@@ -526,6 +526,11 @@ int main(int argc,char *argv[]){
                     }
                 }
                 
+                if(WRITE_ANNUAL_SAMPLING == 1 && year >= ANNUAL_SAMPLING_START & year <= ANNUAL_SAMPLING_END ){
+                    
+                    // Write whole population to file for a particular year
+                    write_population(patch, 0, year, 0, i_run, output_file_directory);
+                }
                 fit_flag = carry_out_processes(year, *fitting_data, patch, overall_partnerships,
                     output, rng_seed_offset, rng_seed_offset_PC, debug, file_data_store,
                     is_counterfactual);

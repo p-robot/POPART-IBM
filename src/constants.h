@@ -290,6 +290,18 @@ extern const char RISK_GP_NAMES[N_RISK][5];
  * 0="CD4>500", 1="CD4 350-500", 2="CD4 200-350", 3="CD4 <200". */
 #define CD4_UNINFECTED -1 
 
+#define BIOMARKER_UNINFECTED -1 // immune biomarker value if uninfected
+#define T_BIOMARKER 365 // Cut-off time
+#define BIOMARKER_RECENT_THRESHOLD 40 // Threshold in Kassanjee basecase for recent/non-recent
+
+#define WRITE_ANNUAL_SAMPLING 1 // Should a proportion of the population be written to file
+#define ANNUAL_SAMPLING_PROP 0.1 // Proportion of population sampled
+#define ANNUAL_SAMPLING_START 2019
+#define ANNUAL_SAMPLING_END 2024
+
+// Types of sampling of the population
+#define RANDOM_SAMPLING 0
+
 /* 4 set-point viral load categories (0="<4"; 1="4-4.5"; 2="4.5-5"; 3=">5") */
 #define NSPVL 4
 #define SPVL_INHERITANCE 0 /* 1 if inherit SPVL from infector, 0 if draw each one separately. */

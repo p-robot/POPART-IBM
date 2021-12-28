@@ -377,6 +377,7 @@ void set_up_population(int p, patch_struct *patch, population *pop){
     person_template.SPVL_num_E = 0;              /* Initialize at dummy value. */
     person_template.SPVL_infector = 0;           /* Initialize at dummy value. */
     person_template.cd4 = CD4_UNINFECTED;        /* Initialize at dummy value. */
+    person_template.immune_biomarker = BIOMARKER_UNINFECTED;        /* Initialize at dummy value. */
     person_template.SPVL_cat = -1;               /* Initialize at dummy value. */
     person_template.DEBUGTOTALTIMEHIVPOS = 0;
     person_template.next_HIV_event = NOEVENT;         /* Initialize at dummy value. */
