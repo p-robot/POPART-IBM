@@ -1,0 +1,18 @@
+﻿Column name,Description
+TimeOfSampling,Time at which the person was sampled (at present start of year in question)
+ID,Individual ID
+PATCH,Patch of the individual
+DoB,Date of birth
+SEX,Sex
+HIV_status,HIV status (1 = HIV positive; 0 = HIV negative)
+DurationOfInfection,Duration of infection between time of sampling and time of infection (years; -1 for HIV negative)
+KassanjeeBiomarker,Value of deterministic basecase Kassanjee immune biomarker (-1 for HIV negative)
+ACUTE,"Whether the individual is ACUTE as defined in the model (1 = Yes, 0 = No)"
+TimeOfInfection,Time of infection (-1 for HIV negative)
+TimeOfDiagnosis,Time of diagnosis (-1 for HIV negative)
+ART_status,"ART status as defined in the model (-1 = If never tested HIV positive, 0 = Never been on ART, 1 = early ART of first few weeks/months before achieve viral suppression, 2 = longer-term ART and Virally Suppressed, 3 = longer-term ART and Virally Unsuppressed, 4 = been on ART before but not currently, 5 = Dropped out of HIV care cascade prior to ever starting ART, 6 = death while on ART"
+t_start_art,Time of ART start (last time ART was started; 0 for HIV negative)
+CD4_status,"CD4 category as defined in the model (0=CD4>500, 1=CD4 350-500, 2=CD4 200-350, 3=CD4 <200; CD4 progression stops on becoming virally suppressed; -1 for HIV negative)"
+VirallySuppressed,"Whether the individual is defined as virally suppressed or not (1 = Yes, 0 = No)"
+ARVPresence,"Whether the individual as presence of ART (derived from ART_status; 1 = Yes, 0 = No)"
+RiskGroup,"Sexual risk-taking behaviour group of individual (low, medium, high)"
