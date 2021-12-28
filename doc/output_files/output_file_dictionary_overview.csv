@@ -22,3 +22,4 @@
 `WRITE_PARTNERSHIPS_AT_PC0`,`Distr_n_lifetime_partners* and Distr_n_partners_lastyear*`,"At the start of PC0, output the distribution of the number of lifetime/last year partners respectively of all individuals currently alive, by sex, age group and risk group",0,
 `WRITE_COST_EFFECTIVENESS_OUTPUT`,`Cost_effectiveness_*`,Output files used in the cost-effectiveness analysis,0,
 `WRITE_TREATS_OUTPUT`,`TREATS_*`,Output files used for the modelling team on the TREATS trial,0,
+`WRITE_ANNUAL_SAMPLING`, `Population_*`, Output of the whole alive population at the start of particular years,0
