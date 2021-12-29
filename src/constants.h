@@ -295,12 +295,6 @@ extern const char RISK_GP_NAMES[N_RISK][5];
 #define BIOMARKER_RECENT_THRESHOLD 40 // Threshold in Kassanjee basecase for recent/non-recent
 
 #define WRITE_ANNUAL_SAMPLING 1 // Should a proportion of the population be written to file
-#define ANNUAL_SAMPLING_PROP 0.1 // Proportion of population sampled
-#define ANNUAL_SAMPLING_START 2019
-#define ANNUAL_SAMPLING_END 2024
-
-// Types of sampling of the population
-#define RANDOM_SAMPLING 0
 
 /* 4 set-point viral load categories (0="<4"; 1="4-4.5"; 2="4.5-5"; 3=">5") */
 #define NSPVL 4
