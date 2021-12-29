@@ -3130,9 +3130,8 @@ void virally_unsuppressed_process(individual* indiv, parameters *param, double t
 
     //printf("virally_unsuppressed_process is_popart= %i\n",is_popart);
 
-
     indiv->ART_status = LTART_VU;
-
+    indiv->t_vu = t;
 
     /* Need to allow CD4 progression again. */
     next_hiv_event(indiv, hiv_pos_progression, n_hiv_pos_progression, size_hiv_pos_progression, param, t, cumulative_outputs, calendar_outputs);

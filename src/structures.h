@@ -149,6 +149,7 @@ struct individual{
      */
 
     double immune_biomarker; // Value of immune biomarker (e.g. Kassanjee et al., 2017)
+    double t_vu; // Time of becoming virally unsuppressed
 };
 
 

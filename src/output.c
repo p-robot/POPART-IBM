@@ -3094,7 +3094,7 @@ void write_population(patch_struct *patch, int patch_id, int year, int timestep,
     // Write header (over three lines for brevity)
     fprintf(SAMPLE_FILE, "TimeOfSampling,ID,PATCH,DoB,SEX,HIV_status,DurationOfInfection,");
     fprintf(SAMPLE_FILE, "KassanjeeBiomarker,ACUTE,TimeOfInfection,TimeOfDiagnosis,ART_status,");
-    fprintf(SAMPLE_FILE, "t_start_art,CD4_status,VirallySuppressed,ARVPresence,RiskGroup\n");
+    fprintf(SAMPLE_FILE, "t_start_art,t_vs,t_vu,CD4_status,VirallySuppressed,ARVPresence,RiskGroup\n");
 
     // Write body
     for(idx = 0; idx < patch[patch_id].id_counter; idx++){
@@ -3127,7 +3127,9 @@ void write_population(patch_struct *patch, int patch_id, int year, int timestep,
             fprintf(SAMPLE_FILE, "%f,", patch[patch_id].individual_population[idx].t_sc);
             fprintf(SAMPLE_FILE, "%f,", patch[patch_id].individual_population[idx].PANGEA_t_diag);
             fprintf(SAMPLE_FILE, "%d,", patch[patch_id].individual_population[idx].ART_status);
-            fprintf(SAMPLE_FILE, "%f,", patch[patch_id].individual_population[idx].t_start_art);
+            fprintf(SAMPLE_FILE, "%f,", patch[patch_id].individual_population[idx].PANGEA_date_firstARTstart);
+            fprintf(SAMPLE_FILE, "%f,", patch[patch_id].individual_population[idx].PANGEA_date_startfirstVLsuppression);
+            fprintf(SAMPLE_FILE, "%f,", patch[patch_id].individual_population[idx].t_vu);
             fprintf(SAMPLE_FILE, "%d,", patch[patch_id].individual_population[idx].cd4);
             if(patch[patch_id].individual_population[idx].ART_status == LTART_VS){
                 fprintf(SAMPLE_FILE, "1,");
