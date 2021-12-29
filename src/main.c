@@ -531,7 +531,7 @@ int main(int argc,char *argv[]){
                     year <= patch[0].param->write_annual_population_end ){
                     
                     // Write whole population to file for a particular year
-                    write_population(patch, 0, year, 0, i_run, output_file_directory);
+                    write_population(patch, 0, year, 0, i_run+1, output_file_directory);
                 }
                 fit_flag = carry_out_processes(year, *fitting_data, patch, overall_partnerships,
                     output, rng_seed_offset, rng_seed_offset_PC, debug, file_data_store,
