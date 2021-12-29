@@ -459,6 +459,11 @@ typedef struct {
     chips_param_struct *chips_params;
     PC_param_struct *PC_params;
     DHS_param_struct *DHS_params;
+
+    // Years between which the whole population will be written at the start of each year
+    int write_annual_population_start;
+    int write_annual_population_end; 
+
 } parameters;
 
 

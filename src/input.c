@@ -988,6 +988,14 @@ void read_time_params(char *patch_tag, parameters *allrunparameters, int n_runs,
             check_if_cannot_read_param(checkreadok, "param_local->DHS_params->DHS_YEAR[round]");
             param_local->DHS_params->DHS_YEAR[i] = (int) temp_int;
         }
+
+        checkreadok = fscanf(param_file, "%lf", &temp_int);
+        param_local->write_annual_population_start = (int) floor(temp_int);
+        check_if_cannot_read_param(checkreadok, "param_local->write_annual_population_start");
+
+        checkreadok = fscanf(param_file, "%lf", &temp_int);
+        param_local->write_annual_population_end = (int) floor(temp_int);
+        check_if_cannot_read_param(checkreadok, "param_local->write_annual_population_end");
     }
     // Close parameter file
     fclose(param_file);
