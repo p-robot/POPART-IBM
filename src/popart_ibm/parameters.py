@@ -442,6 +442,8 @@ class ParameterSet(object):
             colnames = self.params[f].columns
             values = self.params[f].values
 
+            # Number of rows of original
+            nrows = self.params[f].shape[0]
             df_repeated = pd.DataFrame(np.repeat(values, nreps, axis = 0), columns = colnames)
 
             # Assign repeated data frame back to the dictionary of files
@@ -449,7 +451,7 @@ class ParameterSet(object):
         
         # Assign random numbers for seeds
         np.random.seed(seed)
-        self.params["init"].rng_seed = np.random.randint(1E9, 1E10, nreps)
+        self.params["init"].rng_seed = np.random.randint(1E9, 1E10, nreps*nrows)
     
     #####################
     # METHODS FOR WRITING
