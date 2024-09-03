@@ -3456,5 +3456,3 @@ double PANGEA_get_cd4(individual* indiv, double t){
 
     return currentcd4;
 }
-
-

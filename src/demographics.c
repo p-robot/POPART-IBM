@@ -89,39 +89,43 @@ individual_death_AIDS()
 #include "hiv.h"
 #include "debug.h"
 
+/*****************************************************************************/
+/* Calculate per-woman fertility rate based on age using UNPD rates
+
+Return the rate at which any one woman of age `age` gets pregnant and has an 
+offspring that will survive until AGE_ADULT.  Note, in the simulation it is 
+also checked that the women who get pregnant have at least one partner at 
+that time.
+
+Interpolate fertility rate over time and age.  UNPD fertility data is in 
+5-year age groups (e.g. 15-19, 20-24, 25-29) which are converted to an in
+index (e.g. 0, 1, 2).
+
+Potential changes: fertility may depend on HIV status and time.  
+total_fertility_rate should be able to vary over time and country.
+
+
+Arguments
+---------
+age : int
+    Individual's age in years
+
+param : pointer to parameters strucuture
+
+y0 : int
+    Time index for the array fertility_rate_by_age[][]
+
+f : double
+    Interpolation coefficient over time
+
+Returns
+-------
+Per-year probability that a woman this age gets pregnant.
+
+*/
+/*****************************************************************************/
 
 double per_woman_fertility_rate(int age, parameters *param, int y0, double f){
-    /* Calculate per-woman fertility rate based on age using UNPD rates
-    
-    Return the rate at which any one woman of age `age` gets pregnant and has an offspring that will
-    survive until AGE_ADULT.  Note, in the simulation it is also checked that the women who get
-    pregnant have at least one partner at that time.  
-    
-    Interpolate fertility rate over time and age.  UNPD fertility data is in 5-year age groups
-    (e.g. 15-19, 20-24, 25-29) which are converted to an in index (e.g. 0, 1, 2).  
-    
-    Potential changes: fertility may depend on HIV status and time.  total_fertility_rate should be
-    able to vary over time and country.
-    
-    
-    Arguments
-    ---------
-    age : int
-        Individual's age in years
-    
-    param : pointer to parameters strucuture
-    
-    y0 : int
-        Time index for the array fertility_rate_by_age[][]
-    
-    f : double
-        Interpolation coefficient over time
-    
-    Returns
-    -------
-    Per-year probability that a woman this age gets pregnant.
-    
-    */
     
     double result;
     if(age > UNPD_FERTILITY_OLDEST_AGE || age < UNPD_FERTILITY_YOUNGEST_AGE){
@@ -149,32 +153,37 @@ double per_woman_fertility_rate(int age, parameters *param, int y0, double f){
     return result;
 }
 
+/*****************************************************************************/
+/*            get_unpd_time_indices(double t, int *y0, double *f)            */
+/*****************************************************************************/
+/* Calculate index for arrays of UNPD fertility parameters and fraction of 
+time through period
+
+This function is used when interpolating UNPD fertility rates over time.  
+Given the current time t, this function calculates the corresponding array 
+index y0 (and y0+1) which are the array indices for fertility_rate_by_age 
+that we interpolate over, and the fraction f so the interpolation over time
+is f*fertility_rate_by_age[][y0] + (1-f)*fertility_rate_by_age[][y0+1].
+
+Note that we do not interpolate over age here. 
+
+Arguments
+---------
+
+t : double
+    Current time
+y0 : pointer to an int
+    
+f : pointer to a double
+    
+
+Returns
+-------
+Nothing; the variables y0 and f are populated.  
+*/
+/*****************************************************************************/
 
 void get_unpd_time_indices(double t, int *y0, double *f){
-   /* Calculate index for arrays of UNPD fertility parameters and fraction of time through period
-    
-    This function is used when interpolating UNPD fertility rates over time.  Given the current
-    time t, this function calculates the corresponding array index y0 (and y0+1) which are the
-    array indices for fertility_rate_by_age that we interpolate over, and the fraction f so the
-    interpolation over time is f*fertility_rate_by_age[][y0] + (1-f)*fertility_rate_by_age[][y0+1].
-    
-    Note that we do not interpolate over age here. 
-    
-    Arguments
-    ---------
-    
-    t : double
-        Current time
-    y0 : pointer to an int
-        
-    f : pointer to a double
-        
-    
-    Returns
-    -------
-    Nothing; the variables y0 and f are populated.  
-    
-    */
     if(t <= UNPD_START){
         *y0 = 0;
         *f = 0.0;
@@ -189,10 +198,13 @@ void get_unpd_time_indices(double t, int *y0, double *f){
 }
 
 
+/*****************************************************************************/
 /* Calculate the total probability of dying before reaching adulthood AGE_ADULT.
  * In this calculation we assume that the probability of dying aged 10-AGE_ADULT is negligible (which it is in Zambia/South Africa).
  * We therefore use P(dying in childhood) = 1 - P(don't die age 0-4)*P(don't die age 5-9).
  * Note that the mortality rates for e.g. dying age 0-4 are rates per year, so e.g. P(don't die age 0-4) = pow(1-mortality_rate_under5,5).*/
+/*****************************************************************************/
+
 double childhood_mortality(parameters *param, double t){
     double mortality_rate_under5 = 0.0;
     double mortality_rate_5to10 = 0.0;
@@ -235,35 +247,38 @@ double childhood_mortality(parameters *param, double t){
 }
 
 
+/*****************************************************************************/
+/* Return age- and gender- specific mortality rate for a given year
+
+Mortality depends upon age and gender of the group in question and also upon the year in 
+question.  Mortality rates are generated from UNPD mortality statistics.  These are adjusted
+to generate a natural (non-HIV related) mortality rate.  This function calculates the natural
+death rate (ie non-HIV related) using the  intercept and slope stored in the
+`mortality_rate_by_gender_age_intercept` array of the parameters structure.  
+
+UNPD mortality data is in 5 year age groups 0-4, 5-9, 10-14, 15-19, 20-24, 25-29, ... 
+which we index as 0, 1, 2.  
+
+
+Returns
+-------
+Probability of dying in the next calendar year (therefore need to multiply by timestep).
+
+Arguments
+---------
+age : int
+    Age of the individual
+g : int
+    Gender of the individual
+param : pointer to param structure
+    Parameter structure that includes mortality intercept and slope parameters
+t : double
+    Time in decimal years
+*/
+/*****************************************************************************/
+
 double natural_death_rate(int age, int g, parameters *param, double t){
-   /* Return age- and gender- specific mortality rate for a given year
-    
-    Mortality depends upon age and gender of the group in question and also upon the year in 
-    question.  Mortality rates are generated from UNPD mortality statistics.  These are adjusted
-    to generate a natural (non-HIV related) mortality rate.  This function calculates the natural
-    death rate (ie non-HIV related) using the  intercept and slope stored in the
-    `mortality_rate_by_gender_age_intercept` array of the parameters structure.  
-    
-    UNPD mortality data is in 5 year age groups 0-4, 5-9, 10-14, 15-19, 20-24, 25-29, ... 
-    which we index as 0, 1, 2.  
-    
-    
-    Returns
-    -------
-    Probability of dying in the next calendar year (therefore need to multiply by timestep).
-    
-    Arguments
-    ---------
-    age : int
-        Age of the individual
-    g : int
-        Gender of the individual
-    param : pointer to param structure
-        Parameter structure that includes mortality intercept and slope parameters
-    t : double
-        Time in decimal years
-    */
-    
+
     double mortality_rate;
     
     // The formula below gives the indexing for UNPD age-groups using integer division:
@@ -292,9 +307,12 @@ double natural_death_rate(int age, int g, parameters *param, double t){
 }
 
 
+/*****************************************************************************/
 /* Function does: Assign new individuals to a specific risk group. As it stands the number of new individuals in a given risk class is fixed over time.
  * Function arguments: gender and pointer to param structure.
  * Function returns: the index of the risk group (currently 0,1,2). */
+/*****************************************************************************/
+
 int draw_sex_risk(int gender, parameters *param){
     double x;
     x = gsl_rng_uniform (rng);
@@ -306,9 +324,13 @@ int draw_sex_risk(int gender, parameters *param){
         return HIGH;
 }
 
+
+/*****************************************************************************/
 /* Function does: creates entries for everything related to that new_person.
  * Function arguments: pointer to new person to be created, current time (for generating a DoB) and a pointer to the param structure (to get probabilities such as gender, MMC, etc).
  * Function returns: nothing. */
+/*****************************************************************************/
+
 void create_new_individual(individual *new_adult, double t, parameters *param, int hivstatus, population_size_one_year_age *n_infected, patch_struct *patch, int p, all_partnerships *overall_partnerships){
     int i;
 
@@ -435,8 +457,6 @@ void create_new_individual(individual *new_adult, double t, parameters *param, i
     new_adult->n_partners = 0;         
     new_adult->n_HIVpos_partners = 0;
 
-
-
     // At present set_max_n_partners() does not actually use age group or gender.
     /* set_max_n_partners() depends on gender, age group and risk group. This is a new adult so age group is 0. */
     new_adult->max_n_partners = set_max_n_partners(new_adult->gender, 0, new_adult->sex_risk, param);  
@@ -491,29 +511,31 @@ void create_new_individual(individual *new_adult, double t, parameters *param, i
 }
 
 
+/*****************************************************************************/
+/* Schedule HIV cascade events for individuals that transition from childhood to adulthood
+
+There are two types of HIV testing schedules in the model (determined by the macro called 
+`HIVTESTSCHEDULE`).  The first situation (where HIVTESTSCHEDULE == 0) means that individuals
+are scheduled HIV tests sequentially, the second situation (where HIVTESTSCHEDULE == 1) means
+that test scheduling procedure is performed for the whole population at fixed times.  
+
+Arguments
+---------
+new_adult : pointer to an individual structure
+    Individual for whom the test is to be scheduled
+t : double
+    Current time in years
+param : pointer to a parameters structure
+    Structure that stores all parameter values
+cascade_events : pointer to a multidimensional array of individuals
+n_cascade_events : pointer to a long
+size_cascade_events : pointer to a long
+*/
+/*****************************************************************************/
+
 void initialize_first_cascade_event_for_new_individual(individual *new_adult, double t, 
     parameters *param, individual ***cascade_events, long *n_cascade_events, 
     long *size_cascade_events){
-    /* Schedule HIV cascade events for individuals that transition from childhood to adulthood
-    
-    There are two types of HIV testing schedules in the model (determined by the macro called 
-    `HIVTESTSCHEDULE`).  The first situation (where HIVTESTSCHEDULE == 0) means that individuals
-    are scheduled HIV tests sequentially, the second situation (where HIVTESTSCHEDULE == 1) means
-    that test scheduling procedure is performed for the whole population at fixed times.  
-    
-    Arguments
-    ---------
-    new_adult : pointer to an individual structure
-        Individual for whom the test is to be scheduled
-    t : double
-        Current time in years
-    param : pointer to a parameters structure
-        Structure that stores all parameter values
-    cascade_events : pointer to a multidimensional array of individuals
-    n_cascade_events : pointer to a long
-    size_cascade_events : pointer to a long
-    */
-    
     
     // Check the new adult is uninfected with HIV
     if(new_adult->HIV_status == UNINFECTED){
@@ -541,9 +563,12 @@ void initialize_first_cascade_event_for_new_individual(individual *new_adult, do
 }
 
 
+/*****************************************************************************/
 /* Function arguments: pointer to an individual new_adult, pointer to a population_size n_population
  * Function does: updates the population_size according to the new_adult after his/her birth
  * Function returns: nothing. */
+/*****************************************************************************/
+
 void update_population_size_new_adult(individual *new_adult, population_size *n_population, population_size_one_year_age *n_population_oneyearagegroups,
         stratified_population_size *n_population_stratified){
     /* Add to first age group ag=0. */
@@ -570,9 +595,13 @@ void update_population_size_new_adult(individual *new_adult, population_size *n_
 
 }
 
+
+/*****************************************************************************/
 /* Function does: Updates population size structure n_population when an individual dies.  
  * Function arguments: pointer to the specific individual who dies, pointer to population_size structure, age group index (age groups 13-18, 19-22, 23-30, etc). 
  * Function returns: Nothing. */
+/*****************************************************************************/
+
 void update_population_size_death(individual *individual, population_size *n_population, population_size_one_year_age *n_population_oneyearagegroups,
         population_size_one_year_age *n_infected, stratified_population_size *n_population_stratified, int aa, age_list_struct *age_list){
 
@@ -634,8 +663,11 @@ void update_population_size_death(individual *individual, population_size *n_pop
 
 }
 
+/*****************************************************************************/
 /* Function arguments: pointer to age_list, pointer to the new individual who has entered adult population.
  * Function does: Updates age_list when a new adult enters the adult population (from the child population). */
+/*****************************************************************************/
+
 void update_age_list_new_adult(age_list_struct *age_list, individual *individual_ptr){
     int g = individual_ptr->gender;
 
@@ -649,10 +681,13 @@ void update_age_list_new_adult(age_list_struct *age_list, individual *individual
 }
 
 
+/*****************************************************************************/
 /* Function arguments: pointer to age_list, a=age of individual to die,
  *                      new_death = the index of the person to die within its age group, t=time
  * Function does: Updates age_list when an adult leaves the adult population (dying from natural or HIV-related causes).
  * Function returns: Nothing. */
+/*****************************************************************************/
+
 void update_age_list_death(age_list_struct *age_list, int g, int aa, long new_death, double t, int p){
     if(g<0||g>1){
         printf("ERROR: UNKNOWN GENDER!!!!!!\n");
@@ -694,7 +729,9 @@ void update_age_list_death(age_list_struct *age_list, int g, int aa, long new_de
 
 }
 
-
+/*****************************************************************************/
+/* get_age_index()                                                           */
+/*****************************************************************************/
 
 int get_age_index(double DoB, double start_simul){ /// Do we ever use this?
 
@@ -715,6 +752,10 @@ int get_age_index(double DoB, double start_simul){ /// Do we ever use this?
 //}
 
 
+/*****************************************************************************/
+/* get_age_indexv2()                                                         */
+/*****************************************************************************/
+
 int get_age_indexv2(double DoB, double t, int youngest_age_group_index){ /// Do we ever use this? Not currently used except as a check - may use as a 'standard method' later on. */
     int ai;
     int aa = (int) floor(floor(t) - DoB) - AGE_ADULT;
@@ -732,32 +773,34 @@ int get_age_indexv2(double DoB, double t, int youngest_age_group_index){ /// Do 
     return ai;
 }
 
+/*****************************************************************************/
+/* Find index `ag` of AGE_GROUPS[] array to which someone with a DoB belongs at the beginning of
+the year of year t.  
+
+This function assumes nobody will be less than age_groups[0] since no individuals within the 
+IBM are generated with in that age group.  Note that age groups are generally 13-17, 18-22,
+etc, and defined within constants.c.  
+
+Arguments
+---------
+DoB : double
+    Date of birth of an individual (in decimal years)
+t : double
+    Current time (in decimal years)
+age_groups : array of int
+    Bins defining the age groups of interest
+number_age_groups : int
+    The number of age groups (i.e. the length of the array age_groups)
+
+Returns
+-------
+ag : int
+    Index of array age_groups[] in which the individual's (rounded down) age fits.  Any age
+    greater than the largest age group will be counted in the final age group.  
+*/
+/*****************************************************************************/
 
 int get_age_group(double DoB, double t, const int age_groups[], int number_age_groups){
-   /* Find index `ag` of AGE_GROUPS[] array to which someone with a DoB belongs at the beginning of
-    the year of year t.  
-    
-    This function assumes nobody will be less than age_groups[0] since no individuals within the 
-    IBM are generated with in that age group.  Note that age groups are generally 13-17, 18-22,
-    etc, and defined within constants.c.  
-    
-    Arguments
-    ---------
-    DoB : double
-        Date of birth of an individual (in decimal years)
-    t : double
-        Current time (in decimal years)
-    age_groups : array of int
-        Bins defining the age groups of interest
-    number_age_groups : int
-        The number of age groups (i.e. the length of the array age_groups)
-    
-    Returns
-    -------
-    ag : int
-        Index of array age_groups[] in which the individual's (rounded down) age fits.  Any age
-        greater than the largest age group will be counted in the final age group.  
-    */
     double age = floor(t) - DoB;
     
     int ag = 0;
@@ -786,7 +829,10 @@ int get_age_group_unpd(double DoB, double t){
 }
 
 
+/*****************************************************************************/
 /* Function updates n_population as it ages by one year (ageing is by cohort). */
+/*****************************************************************************/
+
 void update_n_population_ageing_by_one_year(patch_struct *patch, int p){
     /* aa+AGE_ADULT is the age of the person (so aa runs from 0..MAX_AGE-AGE_ADULT).
      * ai is the corresponding row index for them in age_list->age_group[ai][] and age_list->number_per_age_group[ai];
@@ -815,12 +861,14 @@ void update_n_population_ageing_by_one_year(patch_struct *patch, int p){
 }
 
 
-
+/*****************************************************************************/
 /* Function updates pop_available_partners and n_pop_available_partners as population ages by one year (ageing is by cohort). 
  * It does this by going through each individual who is about to age (NOTE: it is important that this is called out before age_list is updated)
  * For each individual we go through each of their available partnerships and move each one to the new age group as needed. 
  * Code can probably be sped up - the issue with making pop_available_partners into 1 years age groups is that the number in each age group
  * will be small so more chance for having two identical partnerships formed (not clear how to prevent this). */
+/*****************************************************************************/
+
 void update_pop_available_partners_ageing_by_one_year(patch_struct *patch, int p, all_partnerships *overall_partnerships, double t){
     /* aa+AGE_ADULT is the age of the person (so aa runs from 0..MAX_AGE-AGE_ADULT).
      * ai is the corresponding row index for them in age_list->age_group[ai][] and age_list->number_per_age_group[ai];
@@ -915,8 +963,6 @@ void update_pop_available_partners_ageing_by_one_year(patch_struct *patch, int p
 
                     //if (personB->idx_available_partner[i2]==this_person->idx_available_partner[i]){
 
-
-
                     /* Now we've got the correct index i2 set this to point to the new place in pop_available_partners (ie where this_person was): */
                     personB->idx_available_partner[i2] = this_person->idx_available_partner[i];
 
@@ -940,9 +986,11 @@ void update_pop_available_partners_ageing_by_one_year(patch_struct *patch, int p
 }
 
 
+/*****************************************************************************/
 /* Function arguments: pointer to the age_list structure (which essentially contains lists of individuals in each group). 
  * Function does: moves the pointers for each age group by 1, moves MAX_AGE-1 age people into MAX_AGE group.
  * Function returns: nothing. */
+/*****************************************************************************/
 void age_population_by_one_year(age_list_struct *age_list){
     int number_age_MAX_AGEminusone;
     int n;
@@ -1033,10 +1081,11 @@ void age_population_by_one_year(age_list_struct *age_list){
 }
 
 
-//////////////////////
+/*****************************************************************************/
 /* Function arguments: pointer to the population_size_one_year_age structure
  * Function does: moves the pointers for each age group by 1, moves MAX_AGE-1 age people into MAX_AGE group.
  * Function returns: nothing. */
+/*****************************************************************************/
 void age_population_size_one_year_age_by_one_year(population_size_one_year_age *n_local_pop){
     int g,r;
 
@@ -1078,11 +1127,13 @@ void age_population_size_one_year_age_by_one_year(population_size_one_year_age *
 
 
 
-/* Function arguments: pointer to the person who died. 
+/*****************************************************************************/
+/* Function arguments: pointer to the person who died.
  * Function does: removes a dead person from the list of susceptible_in_serodiscordant_partnership 
  * and n_susceptible_in_serodiscordant_partnership structs.
  * Only call this function if dead_person->idx_serodiscordant is >=0.
- * Function returns: nothing. */        
+ * Function returns: nothing. */
+/*****************************************************************************/
 void remove_dead_person_from_susceptible_in_serodiscordant_partnership(individual *dead_person, 
         individual **susceptible_in_serodiscordant_partnership, long *n_susceptible_in_serodiscordant_partnership){
     int n,i;
@@ -1239,10 +1290,12 @@ void remove_dead_person_from_susceptible_in_serodiscordant_partnership(individua
     }
 }
 
+/*****************************************************************************/
 /* Function arguments: pointer to the person who died.
  * Function does: removes a dead person from the list of pop_available_partners
  * and n_pop_available_partners structs.
  * Function returns: nothing. */
+/*****************************************************************************/
 void remove_dead_person_from_list_available_partners(double time_death, individual *dead_person, population_partners *pop_available_partners, population_size_all_patches *n_pop_available_partners){
     int n, g, ag, r, j, p;
 
@@ -1294,12 +1347,14 @@ void remove_dead_person_from_list_available_partners(double time_death, individu
     }
 }
 
+/*****************************************************************************/
 /* Function arguments: pointer to the person who died, the list of available partners (and the numbers of available partners) plus current time t.
  * Function does: removes the partnerships of people who have died (including serodiscordant partnerships), 
  * and add their partners back to "list of available partners".
  * NOTE: This function can be used for either death from natural causes or HIV-related death 
  * (or indeed anything that removes an individual from all partnerships such as permanent migration if this is ever implemented).
- * Function returns: nothing. */        
+ * Function returns: nothing. */
+/*****************************************************************************/
 void remove_dead_persons_partners(individual *dead_person, population_partners *pop_available_partners, 
         population_size_all_patches *n_pop_available_partners, double t){
 
@@ -1393,9 +1448,11 @@ void remove_dead_persons_partners(individual *dead_person, population_partners *
 
 }
 
+/*****************************************************************************/
 /* Removes someone from the hiv_pos_progression arrays. Note that normally this only happens for dead people.
  * However the same code is used when someone successfully starts ART, so have renamed to remove "dead_person".
  * The variable "reason" tells us whether this is due to non-AIDS death (reason=1), starting ART normally (reason=2), AIDS death (reason=3), or emergency ART (reason 4). */
+/*****************************************************************************/
 
 void remove_from_hiv_pos_progression(individual *indiv, individual ***hiv_pos_progression, long *n_hiv_pos_progression, long *size_hiv_pos_progression, double t, parameters *param, int reason){
     if(indiv->id==FOLLOW_INDIVIDUAL && indiv->patch_no==FOLLOW_PATCH){
@@ -1499,6 +1556,9 @@ void remove_from_hiv_pos_progression(individual *indiv, individual ***hiv_pos_pr
 }
 
 
+/*****************************************************************************/
+/* remove_from_cascade_events()                                              */
+/*****************************************************************************/
 
 void remove_from_cascade_events(individual *indiv, individual ***cascade_events, long *n_cascade_events, long *size_cascade_events, double t, parameters *param){
 
@@ -1558,8 +1618,11 @@ void remove_from_cascade_events(individual *indiv, individual ***cascade_events,
 }
 
 
+/*****************************************************************************/
 /* Function checks if we need to remove indiv from the list of scheduled VMMC events vmmc_events[] and 
  * removes them if necessary. */
+/*****************************************************************************/
+
 void remove_from_vmmc_events(individual *indiv, individual ***vmmc_events, long *n_vmmc_events, long *size_vmmc_events, double t, parameters *param){
 
     /* Don't need to do anything if before start of VMMC.  */
@@ -1576,7 +1639,6 @@ void remove_from_vmmc_events(individual *indiv, individual ***vmmc_events, long 
     if (i==NOEVENT)
         return;
 
-
     /* FOR DEBUGGING: */
     if (vmmc_events[i][indiv->idx_vmmc_event[1]]->id!=indiv->id){
         printf("ERROR: trying to swap out the wrong person in remove_from_vmmc_events(). Trying to swap %li but in vmmc_events[] the person is %li. Exiting\n",indiv->id,vmmc_events[i][indiv->idx_vmmc_event[1]]->id);
@@ -1584,7 +1646,6 @@ void remove_from_vmmc_events(individual *indiv, individual ***vmmc_events, long 
         fflush(stdout);
         exit(1);
     }
-
 
     if(indiv->id==FOLLOW_INDIVIDUAL && indiv->patch_no==FOLLOW_PATCH){
         printf("Individual %ld at time %6.2f - removing from VMMC events\n",indiv->id,t);
@@ -1611,29 +1672,31 @@ void remove_from_vmmc_events(individual *indiv, individual ***vmmc_events, long 
 }
 
 
+/*****************************************************************************/
+/* Age-specific deaths from natural causes; related calls to remove those from data structures
+
+This function determines the natural death rate (from natural_death_rate()) and then picks the 
+individuals in each age group who actually die.  Then other functions are called to delete
+these individuals from various lists within particular data structures (including sorting out
+partnerships and lists which the individual belonged to). 
+
+
+Arguments
+---------
+t : double
+    Current time in decimal years
+patch : Pointer to a patch_struct object
+    Patch object
+p : int
+    Patch identifier
+overall_partnerships : pointer to an all_partnerships structure
+file_data_store : pointer to a file_struct structure
+
+*/
+/*****************************************************************************/
+
 void deaths_natural_causes(double t, patch_struct *patch, int p, 
     all_partnerships *overall_partnerships, file_struct *file_data_store){
-   /* Age-specific deaths from natural causes; related calls to remove those from data structures
-    
-    This function determines the natural death rate (from natural_death_rate()) and then picks the 
-    individuals in each age group who actually die.  Then other functions are called to delete
-    these individuals from various lists within particular data structures (including sorting out
-    partnerships and lists which the individual belonged to). 
-    
-    
-    Arguments
-    ---------
-    t : double
-        Current time in decimal years
-    patch : Pointer to a patch_struct object
-        Patch object
-    p : int
-        Patch identifier
-    overall_partnerships : pointer to an all_partnerships structure
-    file_data_store : pointer to a file_struct structure
-    
-    */
-
     int aa, ai, n_death_per_timestep;
     double p_death_per_timestep;
     int i,g, achecktemp;
@@ -1906,11 +1969,12 @@ void deaths_natural_causes(double t, patch_struct *patch, int p,
     }
 }
 
-
+/*****************************************************************************/
 /* Function does: Deals with transition to adulthood of children from child_population at each timestep. 
  * Children are assigned by hivstatus, but other characteristics (gender, risk, etc) assigned by create_new_individual() function.
  * Function arguments: pointers to child_population, the individual population, size of the population, age_list, params. Current time t.
  * Function returns: nothing. */
+/*****************************************************************************/
 void make_new_adults(double t, patch_struct *patch, int p, all_partnerships *overall_partnerships){
     int hivstatus;
     if(PRINT_DEBUG_DEMOGRAPHICS == 1){
@@ -2296,8 +2360,4 @@ void individual_death_AIDS(age_list_struct *age_list, individual *dead_person,
         }
         update_age_list_death(age_list, g, MAX_AGE-AGE_ADULT, age_list_index, t, p);
     }
-
-
 }
-
-

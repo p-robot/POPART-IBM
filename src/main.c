@@ -34,38 +34,36 @@
 
 /************************************************************************/
 /******************************* main function **************************/
+/*
+Arguments
+---------
+argc: int
+    Number of arguments fed in the command line
+argv: char array
+    Pointer to an array containing the arguments fed in the command line.  Currently the command
+    line argument are the follwing:
+    <inputdir> <nruns> <counterfactual> <i_startrun> <outputdir> <seed_offset> <PC_seed_offset>
+    
+    inputdir : str
+        Directory where input parameter files ("param_processed*.csv") are located
+    nruns : int
+        Number of simulation runs in param files (num. of lines in parameter files to read in)
+    counterfactual : int
+        Should a counterfactual be run?  1 for yes, 0 for no
+    i_startrun : int
+        Simulation number from which to start from.  
+    n_startrun : int
+        Number of simulations to run (starting from i_startrun).  
+    outputdir : str
+        Directory where output files are stored (defaults to `inputdir`/Output/)
+    seed_offset : int
+        Offset to be used for the integer used to seed the GSL random number generator.  
+    PC_seed_offset
+        Offset to be used for the integer used to seed the PC sampling process.  
+*/
 /************************************************************************/
 
 int main(int argc,char *argv[]){
-    /*
-    Main function
-    
-    Arguments
-    ---------
-    argc: int
-        Number of arguments fed in the command line
-    argv: char array
-        Pointer to an array containing the arguments fed in the command line.  Currently the command
-        line argument are the follwing:
-        <inputdir> <nruns> <counterfactual> <i_startrun> <outputdir> <seed_offset> <PC_seed_offset>
-        
-        inputdir : str
-            Directory where input parameter files ("param_processed*.csv") are located
-        nruns : int
-            Number of simulation runs in param files (num. of lines in parameter files to read in)
-        counterfactual : int
-            Should a counterfactual be run?  1 for yes, 0 for no
-        i_startrun : int
-            Simulation number from which to start from.  
-        n_startrun : int
-            Number of simulations to run (starting from i_startrun).  
-        outputdir : str
-            Directory where output files are stored (defaults to `inputdir`/Output/)
-        seed_offset : int
-            Offset to be used for the integer used to seed the GSL random number generator.  
-        PC_seed_offset
-            Offset to be used for the integer used to seed the PC sampling process.  
-    */
     
     /* Check number of arguments */
     if(argc < 2){
