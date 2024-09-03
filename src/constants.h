@@ -294,7 +294,7 @@ extern const char RISK_GP_NAMES[N_RISK][5];
 #define T_BIOMARKER 365 // Cut-off time
 #define BIOMARKER_RECENT_THRESHOLD 40 // Threshold in Kassanjee basecase for recent/non-recent
 
-#define WRITE_ANNUAL_SAMPLING 1 // Should a proportion of the population be written to file
+#define WRITE_ANNUAL_SAMPLING 0 // Should a proportion of the population be written to file
 
 /* 4 set-point viral load categories (0="<4"; 1="4-4.5"; 2="4.5-5"; 3=">5") */
 #define NSPVL 4
