@@ -15,20 +15,17 @@
  */
 
 /* Defines fixed constants and creates fixed-size global arrays for use throughout the code. */
-
 #ifndef CONSTANTS_H_
 #define CONSTANTS_H_
 
 #include "compat.h"
 
-/* Standard libraries */
-#include <stdio.h>      /* printf, scanf, NULL */
-#include <stdlib.h>     /* calloc, exit, free */
+#include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include <time.h>
 #include <string.h>
 
-/* GSL libraries */
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_cdf.h>
@@ -103,10 +100,9 @@
 
 #define WRITE_HAZARDS 0                      /* Generates the files Hazards_*.csv */
 
-
 #define WRITE_PARTNERSHIPS_AT_PC0 0 /* Generates Distr_n_lifetime_partners and Distr_n_partners_lastyear csv files. NEEDED FOR ReadAnnualOutputs-knitr.Rnw.  */
 
-#define FOLLOW_INDIVIDUAL -1 // 30295 // 28101 //  -1 // 1972 // 2727 // 267 // 4328  // if -1 then normal run, otherwise printing things and checking everything that happens to an individual with a certain ID
+#define FOLLOW_INDIVIDUAL -1 // if -1 then normal run, otherwise printing things and checking everything that happens to an individual with a certain ID
 
 #define FOLLOW_PATCH 0 //1
 
@@ -125,7 +121,7 @@ gsl_rng * rng;
 /************************************************************************/
 #define FALSE 0
 #define TRUE 1
-#define DUMMYVALUE -99 /* This is a dummy value which will hopefully throw up exceptions if ever encountered in code. */
+#define DUMMYVALUE -99 // Dummy value used for debugging
 
 /************************************************************************/
 /***************************** Time variables ***************************/
@@ -133,8 +129,6 @@ gsl_rng * rng;
 /* time step is 1/4th of a month (approximately a week) */
 #define N_TIME_STEP_PER_YEAR 48 /* This is the number of time steps in 1 year. */
 #define TIME_STEP 1.0/N_TIME_STEP_PER_YEAR
-
-//extern int MAX_N_YEARS;
 
 #define MAX_N_YEARS 200 /* Maximum number of years the simulation will run for */
 
@@ -163,8 +157,6 @@ gsl_rng * rng;
 
 #define TIME_PC0 2014.5
 
-
-
 /************************************************************************/
 /***************************** Demographics ***************************/
 /************************************************************************/
@@ -172,7 +164,7 @@ gsl_rng * rng;
 #define MAX_POP_SIZE 500000 /* the maximum population size for memory allocation */
 #define MAX_N_PER_AGE_GROUP MAX_POP_SIZE/6   /* This is the maximum number of people in each adult age year group (ie 13, 14, 15...). The denominator is chosen to be really conservative (each age year will be <<5% of adult population)- as this is used for static memory allocation. It is also the maximum number of people who can die in each age group in a given timestep. */
 
-//// BE CAREFUL, MAY NEED TO BE UPDATED IF VERY LONG PROJECTIONS ////
+// MAY NEED TO BE UPDATED IF VERY LONG PROJECTIONS ARE MADE
 #define AGE_ADULT 13 /* age at which individuals enter the simulation */
 #define N_AGE 7 /* number of age groups */
 #define N_AGE_UNPD  14 /* Using UNPD 5 year age groups. */
@@ -184,6 +176,7 @@ gsl_rng * rng;
 #define AGE_DHS_MIN 15
 #define AGE_DHS_MAX 59
 #define DHS_AGE_RANGE_MAX 45  /* DHS runs from 15-59 so 45 age groups. */
+
 /************************************************************************/
 /***************************** PC constants *****************************/
 /************************************************************************/
@@ -403,16 +396,5 @@ double PER_PARTNERSHIP_HAZARD_TEMPSTORE[MAX_PARTNERSHIPS_PER_INDIVIDUAL];
 #define PHYLO_SCENARIO 0 /* used if we want to run several scenarios for PANGEA */
 
 #define HAZARD_OUTPUT_STRING_LENGTH 20000 // This stores the hazard and associated factors.
-
-
-
-/************************************************************************/
-/* Define macros (bits of code that we always use).
- * Note - I found http://www.cprogramming.com/tutorial/cpreprocessor.html helpful to understand this! */
- /************************************************************************/
-
-//#define AGE_INDEX(DoB,start_simul) ( (int) floor(DoB - start_simul) - (AGE_ADULT)) - youngest_age_group_index
-
-
 
 #endif

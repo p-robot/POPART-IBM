@@ -14,6 +14,7 @@
     along with the PopART IBM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/*****************************************************************************/
 /* Contains all functions which initialize the population for the PopART model:
  * get_initial_population_distribution() - calculates the % of individuals in each age x risk group for each gender based 
  * initialize_child_population() - sets up the number of children (by timestep) at the start of the simulation - this will give the number of new adults at each timestep.
@@ -27,11 +28,7 @@
  * init_available_partnerships() - sets up the available partnership lists.
  * init_cumulative_counters() - sets the cumulative counter variables in the struct cumulative_outputs to zero. This is called at the start of the simulation. 
  */
-
-
-/************************************************************************/
-/******************************* Includes  ******************************/
-/************************************************************************/
+/*****************************************************************************/
 
 #include "constants.h"
 #include "init.h"
@@ -39,26 +36,31 @@
 #include "utilities.h"
 #include "debug.h"
 
-/************************************************************************/
-/******************************** functions *****************************/
-/************************************************************************/
 
+/*****************************************************************************/
+// Function: get_initial_population_distribution()
 /* Function does: calculates the proportion of population in each risk group (gender x age x risk) at the start of 
  * the simulation from the initial values in the params_init.txt file and stores it in n_population[][][]. */
+/*****************************************************************************/
+
 void get_initial_population_distribution(population_size *n_population, parameters *param){
     int r, ag;   /* Counters over risk group, age. */
     for (ag = 0; ag < N_AGE; ag++)
         for (r = 0; r < N_RISK; r++){
             n_population->pop_size_per_gender_age_risk[MALE][ag][r] = (long) floor(param->initial_population_size * param->sex_ratio * param->initial_prop_age[ag] * param->initial_prop_gender_risk[MALE][r]);
             n_population->pop_size_per_gender_age_risk[FEMALE][ag][r] = (long) floor(param->initial_population_size * (1.0 - param->sex_ratio) * param->initial_prop_age[ag] * param->initial_prop_gender_risk[FEMALE][r]);
-            //printf("Pop size M/F =%li/%li age=%i risk=%i\n", n_population->pop_size_per_gender_age_risk[MALE][ag][r],n_population->pop_size_per_gender_age_risk[FEMALE][ag][r],ag,r);
         }
 }
 
+
+/*****************************************************************************/
+// Function: get_initial_population_distribution_of_exact_init_size()
 /* 
-Function to generate initial population distribution that is limited to be the same size as the 
-specified initial population size.  
+Function to generate initial population distribution that is limited to be the
+same size as the specified initial population size.
 */
+/*****************************************************************************/
+
 void get_initial_population_distribution_of_exact_init_size(population_size *n_population, parameters *param){
     int r, ag;   /* Counters over risk group, age. */
     
@@ -103,10 +105,12 @@ void get_initial_population_distribution_of_exact_init_size(population_size *n_p
     }
 }
 
-
+/*****************************************************************************/
+// Function: initialize_child_population()
 /* Function does: Initializes the child_population structure given fertility rate and number of women by age group.
  * Note: child_population is the number of children who are in each per-timestep age group. Thus at each timestep this
  * specifies the number of children reaching adulthood. */
+/*****************************************************************************/
 void initialize_child_population(parameters *param, child_population_struct *child_population, 
         stratified_population_size *n_population_stratified, int country_setting, age_list_struct *age_list){
 
@@ -120,7 +124,6 @@ void initialize_child_population(parameters *param, child_population_struct *chi
      * The first step is to calculate  the annual cumulative population-level fertility rate
      * (ie per-woman fertility rate per year summed over all women by age group): */
     //for (ag=0; ag< (N_AGE-2); ag++)
-
 
     /* Here we work out the interpolation index/fraction for this time
      * (as this is the same for each age group). Note that initialisation normally occurs
@@ -137,7 +140,6 @@ void initialize_child_population(parameters *param, child_population_struct *chi
         /* Get the fertility rate for this age group: */
         total_population_fertility_rate += per_woman_fertility_rate(aa+AGE_ADULT, param, y0, f) * age_list->age_list_by_gender[FEMALE]->number_per_age_group[ai];
     }
-        //total_population_fertility_rate += per_woman_fertility_rate((AGE_GROUPS[ag]+AGE_GROUPS[ag+1])/2.0, param, param->start_time_simul, country_setting) * n_population_stratified->pop_size_per_gender_age[FEMALE][ag];
 
     /* Now normalize to per-capita female population rate per timestep - so multiply by timestep and divide by number of women: 
      * NB: add 0.0 to ensure always float (rather than integer) division. */ 
@@ -160,23 +162,27 @@ void initialize_child_population(parameters *param, child_population_struct *chi
     child_population[1].debug_tai = (AGE_ADULT+1)*N_TIME_STEP_PER_YEAR-1;
 }
 
-///////////// FIX THIS:
-///////////// This is a placeholder - set max_n_partners correctly later
+
+/*****************************************************************************/
 /* Function arguments: risk group of individual
- * Function does: This is a placeholder - should return a number of partners based on some data.
- * Function returns: The maximum number of partners that an individual can have in that risk group 
- * (may also depend on age/gender?). */
+* Function does: This is a placeholder - should return a number of partners based on some data.
+* Function returns: The maximum number of partners that an individual can have in that risk group 
+* (may also depend on age/gender?). */
+/*****************************************************************************/
 int set_max_n_partners(int g, int ag, int r, parameters *param){
     return param->max_n_part_noage[r];
 }
 
 
+/*****************************************************************************/
 /* Function arguments: age group of an individual, pointer to "parameter" structure, current time t, 
  * a pointer to age_year which is the age_group that the individual belongs to (we pass as a pointer so 
  * we can change it).
  * Function does: assumes that ages are uniformly distributed between the lower and upper limits of that 
  * age group, assigns an age randomly and then calculates the DoB. The variable age_group is also modified. 
  * Function returns: The DoB of that person. The variable age_group is also modified. */
+/*****************************************************************************/
+
 double make_DoB(int ag, double t, int *aa_ptr){
     double age;
     /* AGE_GROUP[] gives the lower bound of each age group, so need to adapt if in last age group. 
@@ -198,10 +204,14 @@ double make_DoB(int ag, double t, int *aa_ptr){
 }
 
 
+/*****************************************************************************/
+// Function: set_population_count_zero()
 /* Function arguments: pointer to the "population" structure which contains information about the 
- * number of people in each risk, age and gender group and overall.
- * Function does: Initializes all of these as zero. 
- * Function is used to set n_pop_available_partners to zero. */
+* number of people in each risk, age and gender group and overall.
+* Function does: Initializes all of these as zero. 
+* Function is used to set n_pop_available_partners to zero. */
+/*****************************************************************************/
+
 void set_population_count_zero(population_size *n_pop){
     int g,ag,r;
     for (ag=0; ag<N_AGE; ag++){
@@ -213,13 +223,16 @@ void set_population_count_zero(population_size *n_pop){
     }
 }
 
+
+/*****************************************************************************/
+// Function: set_population_count_one_year_zero()
 /* Function does: Initializes n_population structure (which is number of people by gender x one-year age groups x risk group
  *  to zero and sets youngest_age_group_index as 0. */
+/*****************************************************************************/
+
 void set_population_count_one_year_zero(population_size_one_year_age *n_population){
     int g,aa,r;
     n_population->youngest_age_group_index = 0;
-
-
     for (r=0; r<N_RISK; r++){
         for(g=0 ; g<N_GENDER ; g++){
             for (aa=0; aa<(MAX_AGE-AGE_ADULT); aa++){
@@ -231,31 +244,33 @@ void set_population_count_one_year_zero(population_size_one_year_age *n_populati
 }
 
 
+/*****************************************************************************/
+// Function: set_population_count_stratified_zero()
+/*****************************************************************************/
+
 void set_population_count_stratified_zero(stratified_population_size *n_population_stratified){
     int g,ag,r;
     for (ag=0; ag<N_AGE; ag++){
-        //n_population_stratified->pop_size_per_age[ag] = 0;
         for(g=0 ; g<N_GENDER ; g++){
             n_population_stratified->pop_size_per_gender_age[g][ag] = 0;
         }
-        /*for (r=0; r<N_RISK; r++){
-            n_population_stratified->pop_size_per_age_risk[ag][r] = 0;
-        }*/
     }
-
     for (r=0; r<N_RISK; r++){
-        //n_population_stratified->pop_size_per_risk[r] = 0;
         for(g=0 ; g<N_GENDER ; g++){
             n_population_stratified->pop_size_per_gender_risk[g][r] = 0;
             n_population_stratified->prop_pop_per_gender_risk[g][r] = 0.0;
         }
     }
-
     n_population_stratified->total_pop_size = 0;
     for(g=0 ; g<N_GENDER ; g++){
         n_population_stratified->total_pop_size_per_gender[g] = 0;
     }
 }
+
+
+/*****************************************************************************/
+// Function: set_population_count_stratified()
+/*****************************************************************************/
 
 void set_population_count_stratified(stratified_population_size *n_population_stratified, 
         population_size *pop){
@@ -270,9 +285,6 @@ void set_population_count_stratified(stratified_population_size *n_population_st
                 n_population_stratified->pop_size_per_gender_age[g][ag] += pop->pop_size_per_gender_age_risk[g][ag][r];
                 n_population_stratified->pop_size_per_gender_risk[g][r] += pop->pop_size_per_gender_age_risk[g][ag][r];
                 n_population_stratified->total_pop_size_per_gender[g] += pop->pop_size_per_gender_age_risk[g][ag][r];
-                //n_population_stratified->pop_size_per_age[ag] += pop->pop_size_per_gender_age_risk[g][ag][r];
-                //n_population_stratified->pop_size_per_age_risk[ag][r] += pop->pop_size_per_gender_age_risk[g][ag][r];
-                //n_population_stratified->pop_size_per_risk[r] += pop->pop_size_per_gender_age_risk[g][ag][r];
                 n_population_stratified->total_pop_size += pop->pop_size_per_gender_age_risk[g][ag][r];
             }
         }
@@ -289,7 +301,8 @@ void set_population_count_stratified(stratified_population_size *n_population_st
 }
 
 
-
+/*****************************************************************************/
+// Function: set_up_population()
 /* Function arguments: pointer to the "population" structure which contains information about the number of 
  * people in each risk, age and gender group and overall; pointer to the "individual_population" array of 
  * individuals, pointer to the age-list structure; pointer to the "parameter" structure.
@@ -297,6 +310,8 @@ void set_population_count_stratified(stratified_population_size *n_population_st
  * them gender, DoB, riskiness, etc.
  * NOTE: It assigns "-1" to variables such as SPVL and CD4 which will be initialized if the individual 
  * gets HIV, and it sets the numbers of current partners to zero as we initialize partnerships later on. */
+/*****************************************************************************/
+
 void set_up_population(int p, patch_struct *patch, population *pop){
 
     int i;
@@ -467,12 +482,6 @@ void set_up_population(int p, patch_struct *patch, population *pop){
                 exit(1);
             }
         }
-//      if (ag<N_AGE-1)
-//          prop_pregnant_women = (NSTEPS_GESTATION_TIME*TIME_STEP) * per_woman_fertility_rate((AGE_GROUPS[ag]+AGE_GROUPS[ag+1])/2.0, param, param->start_time_simul, country_setting);
-//      else
-//          prop_pregnant_women = (NSTEPS_GESTATION_TIME*TIME_STEP) * per_woman_fertility_rate((AGE_GROUPS[ag]+MAX_AGE)/2.0, param, param->start_time_simul, country_setting);
-
-
         for (r = 0; r < N_RISK; r++){
             /* Calculate number of men circumcised: (we do it here so we don't need to calculate twice for M/F). */
             n_men_circumcised_as_children = (int) floor((patch[p].param->p_child_circ)*patch[p].n_population->pop_size_per_gender_age_risk[MALE][ag][r]);
@@ -508,14 +517,10 @@ void set_up_population(int p, patch_struct *patch, population *pop){
                             n_pregnant_women--;
                         }
                     }
-
                     /* We can't assign ages increasing in the group because we already assign circumcision to the first k people in 
                      * the group. So use make_DoB() to assign uniform DoB consistent with age group ag: */                  
 
                     patch[p].individual_population[patch[p].id_counter].DoB = make_DoB(ag, patch[p].param->start_time_simul, &aa);
-                    // Use code below to test different ways of getting age_group index:
-                    //if (aa!=get_age_index(individual_population[patch[p].id_counter].DoB, param->start_time_simul)||aa!=get_age_indexv2(individual_population[patch[p].id_counter].DoB, patch[p].param->start_time_simul, patch[p].age_list->age_list_by_gender[g]->youngest_age_group_index))
-                    //  printf("ERROR:::In make_DoB aa = %i, calc = %i v2 = %i\n",aa,get_age_index(individual_population[patch[p].id_counter].DoB, param->start_time_simul),get_age_indexv2(individual_population[patch[p].id_counter].DoB, param->start_time_simul, patch[p].age_list->age_list_by_gender[g]->youngest_age_group_index));
                     if (patch[p].individual_population[patch[p].id_counter].id==FOLLOW_INDIVIDUAL && p==FOLLOW_PATCH)
                         printf("In make_DoB DoB=%f start_time = %d aa = %i, calc = %i v2 = %i\n",patch[p].individual_population[patch[p].id_counter].DoB,patch[p].param->start_time_simul,aa,get_age_index(patch[p].individual_population[patch[p].id_counter].DoB, patch[p].param->start_time_simul),get_age_indexv2(patch[p].individual_population[patch[p].id_counter].DoB, patch[p].param->start_time_simul, patch[p].age_list->age_list_by_gender[g]->youngest_age_group_index));
 
@@ -532,7 +537,6 @@ void set_up_population(int p, patch_struct *patch, population *pop){
                             fflush(stdout);
 
                         }
-
                         patch[p].n_population_oneyearagegroups->pop_size_per_gender_age1_risk[g][aa][r] += 1;
                     }
                     else{
@@ -549,33 +553,13 @@ void set_up_population(int p, patch_struct *patch, population *pop){
                     /* This is a list of pointers to all individuals of a given g, ag, r: */
                     (pop->pop_per_gender_age_risk[g][ag][r])[id_counter_per_gender_age_risk[g][ag][r]] = &patch[p].individual_population[patch[p].id_counter];
 
-
-                    /*if(individual_population[patch[p].id_counter].id==5486)
-                    {
-                        print_here_string("000000000000000000000000000000000000000000000000",0);
-                        print_here_string("Created individual in initial population with idx ",individual_population[patch[p].id_counter].id);
-                        print_here_string("Patch ",individual_population[patch[p].id_counter].patch_no);
-                        print_here_string("Gender ",individual_population[patch[p].id_counter].gender);
-                        print_here_string("Circ ",individual_population[patch[p].id_counter].circ);
-                        print_here_string("Risk ",individual_population[patch[p].id_counter].sex_risk);
-                        print_here_string("Yearob ",(int) individual_population[patch[p].id_counter].DoB);
-                        print_here_string("Max_n_partners ",individual_population[patch[p].id_counter].max_n_partners);
-                        print_here_string("Current_n_partners ",individual_population[patch[p].id_counter].n_partners);
-                        print_here_string("111111111111111111111111111111111111111111111111",1);
-                    }*/
-
                     // For debugging:
                     if(patch[p].individual_population[patch[p].id_counter].id==FOLLOW_INDIVIDUAL && p==FOLLOW_PATCH){
                         printf("Creation of adult in initial population with id %ld in patch %d\n",patch[p].individual_population[patch[p].id_counter].id,patch[p].individual_population[patch[p].id_counter].patch_no);
                         fflush(stdout);
                     }
-                    //printf("A:patch[%i].id_counter = %li\n",p,patch[p].id_counter);
-                    /* In check_if_parameters_plausible() we check that initial_population_size is < MAX_POP_SIZE so don't need to check that here. */
                     patch[p].id_counter++;
-                    //printf("B:patch[%i].id_counter = %li\n",p,patch[p].id_counter);
                     id_counter_per_gender_age_risk[g][ag][r]++;
-
-
                 }
             }
         }
@@ -585,9 +569,13 @@ void set_up_population(int p, patch_struct *patch, population *pop){
 }
 
 
+/*****************************************************************************/
+// Function: init_available_partnerships()
 /* This function fills in (*pop_available_partners) and (*n_pop_available_partners) using (*pop) and (*n_population) 
  * it counts all the "free partnerships" and points to them in pop_available_partners, with associated numbers of 
  * free partnerships stored in n_pop_available_partners */
+/*****************************************************************************/
+
 void init_available_partnerships(int p, patch_struct *patch, all_partnerships *overall_partnerships,population *pop){
 
     int g,ag,r;   /* Indices over gender, age group and risk group and patch. */
@@ -609,17 +597,17 @@ void init_available_partnerships(int p, patch_struct *patch, all_partnerships *o
                         overall_partnerships->n_pop_available_partners->pop_per_patch[p].pop_size_per_gender_age_risk[g][ag][r]++;
                     }
                 }
-                /*for(i=0 ; i<n_pop_available_partners->pop_per_patch[p].pop_size_per_gender_age_risk[g][ag][r] ; i++)
-                {
-                    printf("%ld\n",pop_available_partners->pop_per_patch_gender_age_risk[p][g][ag][r][i]->id);
-                    fflush(stdout);
-                }*/
             }
         }
     }
 }
 
+
+/*****************************************************************************/
+// Function: init_cumulative_counters()
 /* Set all cumulative counters to zero (number of HIV tests, CD4 tests etc. ) : */
+/*****************************************************************************/
+
 void init_cumulative_counters(cumulative_outputs_struct *cumulative_outputs){
     cumulative_outputs->N_total_CD4_tests_nonpopart = 0;
     cumulative_outputs->N_total_HIV_tests_nonpopart = 0;
@@ -632,8 +620,9 @@ void init_cumulative_counters(cumulative_outputs_struct *cumulative_outputs){
 }
 
 
-/* init_calendar_counters()
-Set all array elements of arrays in the calendar outputs to zero 
+/*****************************************************************************/
+// Function: init_calendar_counters()
+/* Set all array elements of arrays in the calendar outputs to zero 
 (number of HIV tests, CD4 tests etc. ).  Used in cost-effectiveness analysis.  
 
 Arguments
@@ -647,6 +636,8 @@ Returns
 -------
 Nothing; sets the values of the calendar array elements to zero.  
 */
+/*****************************************************************************/
+
 void init_calendar_counters(calendar_outputs_struct *calendar_outputs){
     
     int i, g, a, cd4, spvl;
@@ -679,6 +670,10 @@ void init_calendar_counters(calendar_outputs_struct *calendar_outputs){
     }
 }
 
+
+/*****************************************************************************/
+// Function: initialise_debug_variables()
+/*****************************************************************************/
 
 void initialise_debug_variables(debug_struct *debug){
     int year, age_f, age_m, risk_f, risk_m;
@@ -718,5 +713,3 @@ void initialise_debug_variables(debug_struct *debug){
         }
     }
 }
-
-

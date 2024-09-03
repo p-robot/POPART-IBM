@@ -14,6 +14,8 @@
     along with the PopART IBM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+/*****************************************************************************/
 /* Demographic processes for the PopART model:
 per_woman_fertility_rate()
     Rate at which a given woman gets pregnant (or rate at which children born per capita).  
@@ -80,6 +82,7 @@ individual_death_AIDS()
     For an indiv who dies of age this function calls all the processes to remove them from all
     appropriate lists.
  */
+/*****************************************************************************/
 
 #include "structures.h"
 #include "constants.h"
@@ -493,21 +496,6 @@ void create_new_individual(individual *new_adult, double t, parameters *param, i
     for(i=new_adult->max_n_partners ; i<MAX_PARTNERSHIPS_PER_INDIVIDUAL ; i++){
         new_adult->idx_available_partner[i] = -1; /* Not in the list of available partners */
     }
-
-    /*if(new_adult->id==5486)
-    {
-            print_here_string("000000000000000000000000000000000000000000000000",0);
-            print_here_string("Created individual ",new_adult->id);
-            print_here_string("Patch ",new_adult->patch_no);
-            print_here_string("Gender ",new_adult->gender);
-            print_here_string("Circ ",new_adult->circ);
-            print_here_string("Risk ",new_adult->sex_risk);
-            print_here_string("Yearob ",(int) new_adult->DoB);
-            print_here_string("Max_n_partners ",new_adult->max_n_partners);
-            print_here_string("Current_n_partners ",new_adult->n_partners);
-            print_here_string("111111111111111111111111111111111111111111111111",1);
-    }*/
-
 }
 
 
@@ -576,11 +564,6 @@ void update_population_size_new_adult(individual *new_adult, population_size *n_
     (n_population_stratified->pop_size_per_gender_age[new_adult->gender][0])++;
     (n_population_stratified->pop_size_per_gender_risk[new_adult->gender][new_adult->sex_risk])++;
     (n_population_stratified->total_pop_size_per_gender[new_adult->gender])++;
-
-    /* Now overall population: */
-    //(n_population_stratified->pop_size_per_age_risk[0][new_adult->sex_risk])++;
-    //(n_population_stratified->pop_size_per_age[0])++;
-    //(n_population_stratified->pop_size_per_risk[new_adult->sex_risk])++;
     (n_population_stratified->total_pop_size)++;
 
     n_population_oneyearagegroups->pop_size_per_gender_age1_risk[new_adult->gender][n_population_oneyearagegroups->youngest_age_group_index][new_adult->sex_risk] += 1;
@@ -591,8 +574,6 @@ void update_population_size_new_adult(individual *new_adult, population_size *n_
             n_population_stratified->prop_pop_per_gender_risk[g][r] = n_population_stratified->pop_size_per_gender_risk[g][r]/n_population_stratified->total_pop_size_per_gender[g];
         }
     }
-
-
 }
 
 
@@ -628,27 +609,17 @@ void update_population_size_death(individual *individual, population_size *n_pop
             ai = n_infected->youngest_age_group_index + aa; /* ai is the index of the two arrays age_list->number_per_age_group and age_list->age_group */
             while (ai>(MAX_AGE-AGE_ADULT-1))
                 ai = ai - (MAX_AGE-AGE_ADULT);
-            // FOR DEBUGGING ONLY:
-            //check_age_group_index(age_list, individual->gender, individual->id,ai); /// could be removed as only checking things ///
             (n_infected->pop_size_per_gender_age1_risk[individual->gender][ai][individual->sex_risk]) -= 1;
-            //printf("--- One death of HIV+ (age group %d, gender %d risk group %d)\n",ai, individual->gender, individual->sex_risk);
-            //fflush(stdout);
         }
         else{
             (n_infected->pop_size_oldest_age_group_gender_risk[individual->gender][individual->sex_risk]) -= 1;
-            //printf("--- One death of HIV+ (old, gender %d risk group %d)\n",individual->gender, individual->sex_risk);
-            //fflush(stdout);
         }
     }
-
     (n_population_stratified->pop_size_per_gender_age[individual->gender][ag])--;
     (n_population_stratified->pop_size_per_gender_risk[individual->gender][individual->sex_risk])--;
     (n_population_stratified->total_pop_size_per_gender[individual->gender])--;
 
-    /* Now overall population: */
-    //(n_population_stratified->pop_size_per_age_risk[ag][individual->sex_risk])--;
-    //(n_population_stratified->pop_size_per_age[ag])--;
-    //(n_population_stratified->pop_size_per_risk[individual->sex_risk])--;
+    /* Overall population: */
     (n_population_stratified->total_pop_size)--;
 
     int r, g; //// arguably we will do this many times so maybe write as a separate inline function?
@@ -699,8 +670,6 @@ void update_age_list_death(age_list_struct *age_list, int g, int aa, long new_de
     /* We have divided up the population in age_list so that individuals aged 13-79 are kept in arrays (by year) within
      * age_list->age_group. People aged 80+ are kept separately and dealt with in the next part of the if statement. */
     if (aa<(MAX_AGE-AGE_ADULT)){
-        //if (PRINT_DEBUG_DEMOGRAPHICS)
-        //  printf("Getting rid of: %f %li aa=%i, n=%li. ",(age_list->age_list_by_gender[g]->age_group)[aa][new_death]->DoB,(age_list->age_list_by_gender[g]->age_group)[aa][new_death]->id,aa,new_death);
 
         /* We always want to keep the age_list->age_group[aa] arrays ordered so that the first age_list->number_per_age_group[aa]
          * individuals are still alive (anything after this point can be a dead person or uninitialized as we should
@@ -710,9 +679,6 @@ void update_age_list_death(age_list_struct *age_list, int g, int aa, long new_de
         (age_list->age_list_by_gender[g]->age_group)[aa][new_death] = (age_list->age_list_by_gender[g]->age_group)[aa][age_list->age_list_by_gender[g]->number_per_age_group[aa]-1];
 
         (age_list->age_list_by_gender[g]->number_per_age_group[aa])--;
-
-        //if (PRINT_DEBUG_DEMOGRAPHICS && (new_death<(age_list->age_list_by_gender[g]->number_per_age_group[aa])))
-        //  printf("Swapped to: %f %li\n",(age_list->age_list_by_gender[g]->age_group)[aa][new_death]->DoB,(age_list->age_list_by_gender[g]->age_group)[aa][new_death]->id);
     }
     /* Now deal with individuals who are aged 80+ - these are kept in a separate array (oldest_age_group): */
     else{
@@ -741,15 +707,6 @@ int get_age_index(double DoB, double start_simul){ /// Do we ever use this?
         ai += (MAX_AGE-AGE_ADULT);
     return ai;
 }
-
-//int get_age_indexv2(double DoB, double t){ /// Do we ever use this?
-//
-//  //int ai = ( (int) floor(start_simul - DoB)) - AGE_ADULT;
-//  /* Here we MUST use a while loop instead of an if statement as if someone is born in 2100, then ai is still negative if we just do this once. */
-//  while (aa<0)
-//      aa += (MAX_AGE-AGE_ADULT);
-//  return aa;
-//}
 
 
 /*****************************************************************************/
@@ -819,7 +776,6 @@ int get_age_group(double DoB, double t, const int age_groups[], int number_age_g
 int get_age_group_unpd(double DoB, double t){
     double age = floor(t) - DoB;
     int ag=0;
-    //printf("age=%6.4lf %i\n",age,AGE_GROUPS_UNPD[N_AGE_UNPD]);
     if (age<AGE_GROUPS_UNPD[N_AGE_UNPD])
         while (AGE_GROUPS_UNPD[ag+1]<=age)
             ag++;
@@ -879,11 +835,6 @@ void update_pop_available_partners_ageing_by_one_year(patch_struct *patch, int p
     individual *this_person;
     individual *personB;
 
-    //// Debug:
-    //for 
-    //printf("update_pop_available_partners_ageing_by_one_year: %li\n",n_pop_available_partners->pop_size_per_gender_age_risk[0][1][0]);
-    //printf("Check this person is here: %li\n",pop_available_partners->pop_per_gender_age_risk[0][1][0][(n_pop_available_partners->pop_size_per_gender_age_risk[0][1][0])-1]->id);
-    //fflush(stdout);
     for (g=0;g<N_GENDER;g++){
         /* Deliberately starting at age_index=1 - we are interested in ageing the population by one year, but those aged 12 turning 13 are dealt with separately as new adults. */
         for (age_index=1; age_index<N_AGE; age_index++){
@@ -907,8 +858,6 @@ void update_pop_available_partners_ageing_by_one_year(patch_struct *patch, int p
             for (n=0; n<n_age_ai; n++){
                 /* Use the pointer as an alias for this person - makes code more readable + possibly a bit quicker? */
                 this_person = patch[p].age_list->age_list_by_gender[g]->age_group[ai][n];
-                /*if (this_person->id==10013)
-                printf("10013 moving out of age group: %i with DoB %f\n",age_index-1,this_person->DoB);*/
 
                 if(this_person->id==FOLLOW_INDIVIDUAL && this_person->patch_no==FOLLOW_PATCH)
                 {
@@ -917,26 +866,12 @@ void update_pop_available_partners_ageing_by_one_year(patch_struct *patch, int p
                 }
 
                 r = this_person->sex_risk;
-                /*if(p!=this_person->patch_no)
-                {
-                    printf("Issue in update_pop_available_partners_ageing_by_one_year\n");
-                    fflush(stdout);
-                }*/
-
-                //print_here_string("Check patch inside function",p);
-
-                //printf("Current g a r = %i %i %i\n",g,age_index,r);
-                //printf("XXupdate_pop_available_partners_ageing_by_one_year: %li\n",n_pop_available_partners->pop_size_per_gender_age_risk[0][1][0]);
-                //printf("Check this person is here: ID=%li CD4=%i idx=%i\n",pop_available_partners->pop_per_gender_age_risk[0][1][0][(n_pop_available_partners->pop_size_per_gender_age_risk[0][1][0])-1]->id,pop_available_partners->pop_per_gender_age_risk[0][1][0][(n_pop_available_partners->pop_size_per_gender_age_risk[0][1][0])-1]->cd4,pop_available_partners->pop_per_gender_age_risk[0][1][0][(n_pop_available_partners->pop_size_per_gender_age_risk[0][1][0])-1]->idx_available_partner[0]);
-                //fflush(stdout);
                 /* We go over all available partnerships of this person. */
                 i = 0;
                 //printf("This person: %i %i %f\n",g,r,this_person->DoB);
                 while ((this_person->idx_available_partner[i]>-1) && (i<(this_person->max_n_partners-this_person->n_partners)) && (overall_partnerships->n_pop_available_partners->pop_per_patch[p].pop_size_per_gender_age_risk[g][age_index-1][r]>0)){
                     /* Swap this person's available index with that of the last person in the array (we'll call them person B):
                      * Firstly swap the pointer with the pointer of person B: */
-                    //printf("HEY2x %li %i %i %i\n",n_pop_available_partners->pop_size_per_gender_age_risk[g][age_index-1][r],g,age_index-1,r);
-                    //printf("Last person: %i %i %f %li\n",pop_available_partners->pop_per_gender_age_risk[g][age_index-1][r][(n_pop_available_partners->pop_size_per_gender_age_risk[g][age_index-1][r])-1]->gender,pop_available_partners->pop_per_gender_age_risk[g][age_index-1][r][n_pop_available_partners->pop_size_per_gender_age_risk[g][age_index-1][r]-1]->sex_risk,pop_available_partners->pop_per_gender_age_risk[g][age_index-1][r][n_pop_available_partners->pop_size_per_gender_age_risk[g][age_index-1][r]-1]->DoB,pop_available_partners->pop_per_gender_age_risk[g][age_index-1][r][(n_pop_available_partners->pop_size_per_gender_age_risk[g][age_index-1][r])-1]->id);
                     personB = overall_partnerships->pop_available_partners->pop_per_patch_gender_age_risk[p][g][age_index-1][r][overall_partnerships->n_pop_available_partners->pop_per_patch[p].pop_size_per_gender_age_risk[g][age_index-1][r]-1];
 
                     overall_partnerships->pop_available_partners->pop_per_patch_gender_age_risk[p][g][age_index-1][r][this_person->idx_available_partner[i]] = personB;
@@ -945,7 +880,6 @@ void update_pop_available_partners_ageing_by_one_year(patch_struct *patch, int p
                      * Unfortunately we have to look through their partnerships to find the right one: */
                     i2 = personB->max_n_partners-personB->n_partners-1;
                     while ((personB->idx_available_partner[i2]!=overall_partnerships->n_pop_available_partners->pop_per_patch[p].pop_size_per_gender_age_risk[g][age_index-1][r]-1) && (personB->idx_available_partner[i2]>=0) && (i2>=0)){
-                        //printf("HEY %i %i %li\n",i2,personB->idx_available_partner[i2],n_pop_available_partners->pop_size_per_gender_age_risk[g][age_index-1][r]-1);
                         if ((personB->idx_available_partner[i2]==-1)|| (i2<0)){
                             printf("Can't find person B's index in update_pop_available_partners_ageing_by_one_year\n");
                             printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
@@ -954,14 +888,8 @@ void update_pop_available_partners_ageing_by_one_year(patch_struct *patch, int p
                         }
                         i2--;
                     }
-                    //  if (this_person->id==10013){
-                    //  printf("Swapping 10013 idx = %i (%li) with %li's idx=%i (%li): \n",i, this_person->idx_available_partner[i],personB->id,i2,personB->idx_available_partner[i2]);
-                    //  printf("Now 10013's indices are: %li %li %li %li %li %li %li %li %li \n",this_person->idx_available_partner[0],this_person->idx_available_partner[1],this_person->idx_available_partner[2],this_person->idx_available_partner[3],this_person->idx_available_partner[4],this_person->idx_available_partner[5],this_person->idx_available_partner[6],this_person->idx_available_partner[7],this_person->idx_available_partner[8]);
-                    //}
                     ////* Note that in general we can swap indices from the same person. The only problem comes if we are trying to swap the same index (which should be because they are the last person).
                     /// * In that case we actually don't need to do anything.*/
-
-                    //if (personB->idx_available_partner[i2]==this_person->idx_available_partner[i]){
 
                     /* Now we've got the correct index i2 set this to point to the new place in pop_available_partners (ie where this_person was): */
                     personB->idx_available_partner[i2] = this_person->idx_available_partner[i];
@@ -1001,8 +929,6 @@ void age_population_by_one_year(age_list_struct *age_list){
         /* If we have not reached the start of the array, move backwards to the previous element in the array. */
         if ((age_list->age_list_by_gender[g]->youngest_age_group_index) > 0){
 
-            //printf("Oldest age group person:%f\n",age_list->age_list_by_gender[g]->oldest_age_group[(age_list->age_list_by_gender[g]->number_oldest_age_group)-1]->DoB);
-
             /* Move people aged MAX_AGE-1 into age_list->oldest_age_group[]. */
             ////1:/* Note: ((age_list->age_list_by_gender[g]->youngest_number_per_age_group_ptr)-1) should be a pointer to the previous group to the youngest age group (ie the group aged MAX_AGE-1). */
             number_age_MAX_AGEminusone = age_list->age_list_by_gender[g]->number_per_age_group[age_list->age_list_by_gender[g]->youngest_age_group_index-1];
@@ -1014,12 +940,6 @@ void age_population_by_one_year(age_list_struct *age_list){
                 ////1:age_list->oldest_age_group[(age_list->number_oldest_age_group)+n] = (age_list->youngest_age_group-1)[n];
                 age_list->age_list_by_gender[g]->oldest_age_group[(age_list->age_list_by_gender[g]->number_oldest_age_group)+n] = age_list->age_list_by_gender[g]->age_group[age_list->age_list_by_gender[g]->youngest_age_group_index-1][n];
 
-
-                /* Make the pointer in the individual structure point to this place in the age_list. */
-                //// Not necessary?:
-                ////(age_list->oldest_age_group[(age_list->number_oldest_age_group)+n])->age_list_ptr = age_list->oldest_age_group[(age_list->number_oldest_age_group)+n];
-                //if (PRINT_DEBUG_DEMOGRAPHICS)
-                //  printf("Moving age group DoB = %f\n",(age_list->age_list_by_gender[g]->age_group[age_list->age_list_by_gender[g]->youngest_age_group_index-1][n])->DoB);
             }
 
             /* Update count in age_list->oldest_age_group[]. */
@@ -1032,13 +952,9 @@ void age_population_by_one_year(age_list_struct *age_list){
             ////1:*((age_list->youngest_number_per_age_group_ptr) -1) = 0;
             age_list->age_list_by_gender[g]->number_per_age_group[age_list->age_list_by_gender[g]->youngest_age_group_index-1] = 0;
 
-
             /* Move the pointer for the youngest age group to the start of the array. */
             (age_list->age_list_by_gender[g]->youngest_age_group_index)--;
 
-            ////1:(age_list->youngest_age_group)--;
-            ////1:(age_list->youngest_number_per_age_group_ptr)--;
-            ////1:age_list->youngest_number_per_age_group_index--;
             /* Note: we probably ought to set the pointers in age_list for what used to be the MAX_AGE-1 group to NULL, but it's not essential as the count should tell us that there should be nobody there. */
             if (PRINT_DEBUG_DEMOGRAPHICS)
                 if (age_list->age_list_by_gender[g]->number_per_age_group[age_list->age_list_by_gender[g]->youngest_age_group_index]>0)
@@ -1061,7 +977,6 @@ void age_population_by_one_year(age_list_struct *age_list){
                 ////(age_list->oldest_age_group[(age_list->number_oldest_age_group)+n])->age_list_ptr = age_list->oldest_age_group[(age_list->number_oldest_age_group)+n];
             }
 
-
             /* Update count in age_list->oldest_age_group[]. */
             age_list->age_list_by_gender[g]->number_oldest_age_group += age_list->age_list_by_gender[g]->number_per_age_group[MAX_AGE-AGE_ADULT-1];
 
@@ -1069,15 +984,9 @@ void age_population_by_one_year(age_list_struct *age_list){
             age_list->age_list_by_gender[g]->number_per_age_group[MAX_AGE-AGE_ADULT-1] = 0;
 
             /* Move the pointer for the youngest age group to the end of the array. */
-            ////1:age_list->youngest_age_group = age_list->age_group[MAX_AGE-AGE_ADULT-1];
             age_list->age_list_by_gender[g]->youngest_age_group_index = MAX_AGE-AGE_ADULT-1;
-            ////1:(age_list->youngest_number_per_age_group_ptr) = &(age_list->number_per_age_group[MAX_AGE-AGE_ADULT-1]);
-            /* Note: we probably ought to set the pointers in age_list for what used to be the MAX_AGE-1 group to NULL, but it's not essential as the count should tell us that there should be nobody there. */
-            ////1:age_list->youngest_number_per_age_group_index = MAX_AGE-AGE_ADULT-1;
-
         }
     }
-
 }
 
 
@@ -1126,7 +1035,6 @@ void age_population_size_one_year_age_by_one_year(population_size_one_year_age *
 }
 
 
-
 /*****************************************************************************/
 /* Function arguments: pointer to the person who died.
  * Function does: removes a dead person from the list of susceptible_in_serodiscordant_partnership 
@@ -1139,35 +1047,20 @@ void remove_dead_person_from_susceptible_in_serodiscordant_partnership(individua
     int n,i;
     individual *a_partner;
 
-    //print_here_string("remove_dead_person_from_susceptible_in_serodiscordant_partnership line",731);
-
     /* We only need to update serodiscordant partnerships when the dead individual is seropositive. */ 
     if ((dead_person->HIV_status)>UNINFECTED){
-
-        //print_here_string("remove_dead_person_from_susceptible_in_serodiscordant_partnership in the if",0);
 
         if(dead_person->id==FOLLOW_INDIVIDUAL && dead_person->patch_no==FOLLOW_PATCH){
             printf("Individual %ld from patch %d is dying - removing partners from susceptible in serodiscordant partnerships\n",dead_person->id,dead_person->patch_no);
             fflush(stdout);
         }
 
-        //print_here_string("remove_dead_person_from_susceptible_in_serodiscordant_partnership in the if",1);
-
         for (n=0; n<dead_person->n_partners; n++){
-
-            //print_here_string("remove_dead_person_from_susceptible_in_serodiscordant_partnership in the if in the for loop, n = ",n);
-
-            //print_here_string("remove_dead_person_from_susceptible_in_serodiscordant_partnership",0);
 
             a_partner = dead_person->partner_pairs[n]->ptr[1-dead_person->gender];
 
-            //print_here_string("remove_dead_person_from_susceptible_in_serodiscordant_partnership",1);
-
             /* Only need to deal with the partner if the partner is HIV-. */
             if (a_partner->HIV_status==UNINFECTED){
-
-                //print_here_string("---",0);
-                //print_here_string("remove from serodiscordant because HIV+ partner died",0);
 
                 /* If they only have 1 seropositive partner (which should be the dead person), then remove them from the list susceptible_in_serodiscordant_partnership. */
                 if (a_partner->n_HIVpos_partners==1){
@@ -1196,17 +1089,6 @@ void remove_dead_person_from_susceptible_in_serodiscordant_partnership(individua
                 /* Otherwise the partner is still in at least one serodiscordant partnership, so just need to reduce the number of seropositive partners by 1: */
                 else{
 
-                    //print_here_string("remove_dead_person_from_susceptible_in_serodiscordant_partnership",20);
-                    /* Firstly we need to find where in that list is the dead person. */
-
-                    ////////////////////////////////////////////////////////////
-                    ////// I AM COMMENTING THIS OUT AS I THINK THIS IS WRONG ////
-                    //                  i=0;
-                    //                  do{
-                    //                      i++;
-                    //                  } while ((a_partner->partner_pairs_HIVpos[i]->ptr[dead_person->gender])!=dead_person);
-                    ////////////////////////////////////////////////////////////////
-                    ///// SHOULD BE INSTEAD (I THINK) ////
                     i=0;
 
                     if(dead_person->id == FOLLOW_INDIVIDUAL && dead_person->patch_no==FOLLOW_PATCH)
@@ -1217,25 +1099,11 @@ void remove_dead_person_from_susceptible_in_serodiscordant_partnership(individua
                             printf("Looking at HIV positive partner: %li in patch %d, who has %i HIV positive partners \n",a_partner->id,a_partner->patch_no, a_partner->n_HIVpos_partners);
                             print_individual(a_partner);
                         }
-                        //printf("a_partner->partner_pairs_HIVpos[i]->ptr[dead_person->gender] %p\n",a_partner->partner_pairs_HIVpos[i]->ptr[dead_person->gender]);
-                        //printf("dead_person %p\n",dead_person);
-
-                        //printf("a_partner->partner_pairs_HIVpos[i]->ptr[dead_person->gender]->id %li\n",a_partner->partner_pairs_HIVpos[i]->ptr[dead_person->gender]->id);
-                        //printf("a_partner->partner_pairs_HIVpos[i]->ptr[dead_person->gender]->patch_no %d\n",a_partner->partner_pairs_HIVpos[i]->ptr[dead_person->gender]->patch_no);
-                        //printf("dead_person->id %li\n",dead_person->id);
-                        //printf("dead_person->patch_no %d\n",dead_person->patch_no);
-
                     }
 
                     while ((a_partner->partner_pairs_HIVpos[i]->ptr[dead_person->gender])!=dead_person){
-                        //print_here_string("in the while before increment, i = ",i);
                         i++;
-                        //print_here_string("in the while after increment, i = ",i);
                     }
-                    ////////////////////////////////////////////////////////////////
-                    //printf("CHECKME: %li %li\n", a_partner->partner_pairs_HIVpos[i]->ptr[dead_person->gender]->id,dead_person->id);
-
-                    //print_here_string("remove_dead_person_from_susceptible_in_serodiscordant_partnership",21);
 
                     if(PRINT_DEBUG_DEMOGRAPHICS==1) printf("CHECKME: %li %li\n", a_partner->partner_pairs_HIVpos[i]->ptr[dead_person->gender]->id,dead_person->id);
                     /* Now swap out that partner (as they are dead) */
@@ -1263,17 +1131,11 @@ void remove_dead_person_from_susceptible_in_serodiscordant_partnership(individua
      * which needs updating. */ 
     else if (dead_person->idx_serodiscordant!=-1){
 
-        //print_here_string("remove_dead_person_from_susceptible_in_serodiscordant_partnership in the else",0);
-
         if(dead_person->id==FOLLOW_INDIVIDUAL && dead_person->patch_no==FOLLOW_PATCH)
         {
             printf("Individual %ld from patch %d is dying- removing him/her from list of susceptibles in serodiscordant partnership\n",dead_person->id,dead_person->patch_no);
             fflush(stdout);
         }
-
-        //print_here_string("remove_dead_person_from_susceptible_in_serodiscordant_partnership in the else",1);
-        //print_here_string("---",0);
-        //print_here_string("remove from serodiscordant because died whilst HIV-",0);
 
         if ((*n_susceptible_in_serodiscordant_partnership)>1){
             susceptible_in_serodiscordant_partnership[dead_person->idx_serodiscordant] = susceptible_in_serodiscordant_partnership[n_susceptible_in_serodiscordant_partnership[0] - 1];
@@ -1310,26 +1172,8 @@ void remove_dead_person_from_list_available_partners(double time_death, individu
         fflush(stdout);
     }
 
-
-    ///// Debugging:
-    //printf("Details to debug: %i %i %i, %li \n",g,ag,r,n_pop_available_partners->pop_size_per_gender_age_risk[g][ag][r] - 1);
-    //printf("remove_dead_person_from_list_available_partners: %li\n",n_pop_available_partners->pop_size_per_gender_age_risk[0][6][2]);
-    ///fflush(stdout);
-    //printf("People: %li",n_pop_available_partners->pop_size_per_gender_age_risk[0][1][0]);
-    //for (n=0; n<n_pop_available_partners->pop_size_per_gender_age_risk[0][6][2];n++){
-    //  printf("%8li ",pop_available_partners->pop_per_gender_age_risk[0][6][2][n]->id);
-    //}
-    //printf("\n");
-    //fflush(stdout);
-
-    //printf(" %li\n",pop_available_partners->pop_per_gender_age_risk[g][ag][r][n_pop_available_partners->pop_size_per_gender_age_risk[g][ag][r] - 1]->id);
-    ////    
-
-
     for (n=dead_person->n_partners; n<dead_person->max_n_partners; n++)
     {
-        //if(dead_person->id==FOLLOW_INDIVIDUAL && dead_person->patch_no==FOLLOW_PATCH)
-        //printf("Hey %li %li\n",dead_person->idx_available_partner[n-dead_person->n_partners],n_pop_available_partners->pop_per_patch[p].pop_size_per_gender_age_risk[g][ag][r] - 1);
         if(dead_person->idx_available_partner[n-dead_person->n_partners]<n_pop_available_partners->pop_per_patch[p].pop_size_per_gender_age_risk[g][ag][r] - 1)
         {
             pop_available_partners->pop_per_patch_gender_age_risk[p][g][ag][r][dead_person->idx_available_partner[n-dead_person->n_partners]] = pop_available_partners->pop_per_patch_gender_age_risk[p][g][ag][r][n_pop_available_partners->pop_per_patch[p].pop_size_per_gender_age_risk[g][ag][r] - 1]; /* pointing to the last person instead of the current one */
@@ -1401,7 +1245,6 @@ void remove_dead_persons_partners(individual *dead_person, population_partners *
             print_individual(a_partner);
         }
 
-        //printf("Removing partner %li of dead person %li HIV %i %i\n",a_partner->id,dead_person->id,dead_person->HIV_status,a_partner->HIV_status);
         if (PRINT_DEBUG_DEMOGRAPHICS)
             printf("Removing partner %li of dead person %li\n",a_partner->id,dead_person->id);
         j=0;
@@ -1545,8 +1388,6 @@ void remove_from_hiv_pos_progression(individual *indiv, individual ***hiv_pos_pr
 
     }
 
-    /* for DEBUGGING: */
-    //else if (!(i==array_index_for_hiv_event && (reason==3||reason==4))){
     else if (!(reason==3||reason==4)){
         printf("ERROR: ****Person %ld from patch %d in remove_from_hiv_pos_progression(), trying unsuccessfully to remove HIV event from past %ld %i\n",indiv->id,indiv->patch_no,i,array_index_for_hiv_event);
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
@@ -1733,10 +1574,6 @@ void deaths_natural_causes(double t, patch_struct *patch, int p,
             p_death_per_timestep = 
                 natural_death_rate(aa + AGE_ADULT, g, patch[p].param, t) * TIME_STEP;
             
-            // This was checked against calculations from Excel file (and validated):
-            //printf("For age %i at time %6.2f death rate per timestep = %f %f\n", 
-            // age+AGE_ADULT,t,p_death_per_timestep,natural_death_rate(age+AGE_ADULT, t, param));
-            
             // This is the number of people in age group `a` who die per timestep
             n_death_per_timestep =  gsl_ran_binomial(rng, p_death_per_timestep,
                 patch[p].age_list->age_list_by_gender[g]->number_per_age_group[ai]);
@@ -1904,11 +1741,6 @@ void deaths_natural_causes(double t, patch_struct *patch, int p,
         // Update their relationships
         for(i = n_death_per_timestep - 1; i >= 0; i--){
             person_dying = patch[p].age_list->age_list_by_gender[g]->oldest_age_group[(int) patch[p].new_deaths[i]];
-
-            //printf("ID = %li Gender = %i %i %i %f\n",
-            //(age_list->oldest_age_group[(int) new_deaths[i]])->id,
-            // (age_list->oldest_age_group[(int) new_deaths[i]])->gender,
-            // MAX_AGE,N_AGE-1,t-(age_list->oldest_age_group[(int) new_deaths[i]])->DoB);
             
             if(PRINT_DEBUG_DEMOGRAPHICS == 1){
                 printf("ID = %li Gender = %i %i %i %f\n",
@@ -1933,7 +1765,6 @@ void deaths_natural_causes(double t, patch_struct *patch, int p,
                 remove_from_hiv_pos_progression(person_dying, patch[p].hiv_pos_progression,
                     patch[p].n_hiv_pos_progression, patch[p].size_hiv_pos_progression, t,
                     patch[p].param, 1);
-                //patch[p].DEBUG_NHIVDEAD++;
             }
             
             remove_from_cascade_events(person_dying, patch[p].cascade_events,
@@ -1982,29 +1813,15 @@ void make_new_adults(double t, patch_struct *patch, int p, all_partnerships *ove
         printf("Number of new HIV- (and HIV+) kids = %li %li\n",patch[p].child_population[0].n_child[patch[p].child_population[0].debug_tai],patch[p].child_population[1].n_child[patch[p].child_population[1].debug_tai]);
     }
 
-
-    /* Store number of new adults for validation - compare with output of print_one_year_age_groups_including_kids() to see if the correct number of new adults are created. */
-    //if (WRITE_DEBUG_DEMOGRAPHICS_NBIRTHS_NEWADULTS_DEATHS){
-    //printf("patch[p].DEBUG_NNEWADULTS = %li",patch[p].DEBUG_NNEWADULTS);
-
-    //if ((*(patch[p].child_population[0].transition_to_adult_index_n_child)!=patch[p].child_population[0].n_child[patch[p].child_population[0].debug_tai])||(*(patch[p].child_population[1].transition_to_adult_index_n_child)!=patch[p].child_population[1].n_child[patch[p].child_population[1].debug_tai]))
-    //  printf("*(patch[p].child_pop) = %li %li  debug_tai = %li %li \n",*(patch[p].child_population[0].transition_to_adult_index_n_child),*(patch[p].child_population[1].transition_to_adult_index_n_child),patch[p].child_population[0].n_child[patch[p].child_population[0].debug_tai],patch[p].child_population[1].n_child[patch[p].child_population[1].debug_tai]);
-
-    //patch[p].DEBUG_NNEWADULTS = patch[p].DEBUG_NNEWADULTS + *(patch[p].child_population[0].transition_to_adult_index_n_child)+*(patch[p].child_population[1].transition_to_adult_index_n_child);
     patch[p].DEBUG_NNEWADULTS = patch[p].DEBUG_NNEWADULTS + patch[p].child_population[0].n_child[patch[p].child_population[0].debug_tai]+patch[p].child_population[1].n_child[patch[p].child_population[1].debug_tai];
     //}
 
-    //printf("Number of new HIV- (and HIV+) kids at time %6.2f in patch %i = %i %i\n",t,p,*(child_population[0].transition_to_adult_index_n_child),*(child_population[1].transition_to_adult_index_n_child));
-    ////// Add HIV+ kids:
     /* Add all the kids for this  timestep: */
     for (hivstatus=0;hivstatus<=1;hivstatus++){
         //while (*(patch[p].child_population[hivstatus].transition_to_adult_index_n_child)>0){
 
         while (patch[p].child_population[hivstatus].n_child[patch[p].child_population[hivstatus].debug_tai]>0){
             /* This adds an individual (HIV-) to individual_population: */
-            ////// DEBUG ERROR - this 
-            // WRONG version: create_new_individual((individual_population+(n_population->total_pop_size)), t, param);
-            /// Right version:
 
             create_new_individual((patch[p].individual_population+patch[p].id_counter), t, patch[p].param, hivstatus, patch[p].n_infected, patch, p, overall_partnerships);
 
@@ -2019,30 +1836,19 @@ void make_new_adults(double t, patch_struct *patch, int p, all_partnerships *ove
                 exit(1);
             }
 
-
-
             /* This updates the n_population variable which counts number of people: */
             update_population_size_new_adult((patch[p].individual_population+patch[p].id_counter-1), patch[p].n_population, patch[p].n_population_oneyearagegroups, patch[p].n_population_stratified);
 
             update_age_list_new_adult(patch[p].age_list,(patch[p].individual_population+patch[p].id_counter-1));
 
-            //printf("NEWID = %li Number of new kids left = %i, total pop = %li GENDER = %i\n",patch[p].id_counter,patch[p].child_population[hivstatus].n_child[patch[p].child_population[hivstatus].debug_tai],n_population_stratified->total_pop_size,(individual_population+patch[p].id_counter-1)->gender);
             if(PRINT_DEBUG_DEMOGRAPHICS == 1){
-                //printf("NEWID = %li Number of new kids left = %li, total pop = %li GENDER = %i\n",patch[p].id_counter,*(patch[p].child_population[hivstatus].transition_to_adult_index_n_child),patch[p].n_population_stratified->total_pop_size,(patch[p].individual_population+patch[p].id_counter-1)->gender);
                 printf("NEWID = %li Number of new kids left = %li, total pop = %li GENDER = %i\n",patch[p].id_counter,patch[p].child_population[hivstatus].n_child[patch[p].child_population[hivstatus].debug_tai],patch[p].n_population_stratified->total_pop_size,(patch[p].individual_population+patch[p].id_counter-1)->gender);
             }
             /* Have added a kid, so reduce the number we need to add by 1: */
             patch[p].child_population[hivstatus].n_child[patch[p].child_population[hivstatus].debug_tai]--;
-            //(*(patch[p].child_population[hivstatus].transition_to_adult_index_n_child))--;
-
-
         }
         /* Note that the while loop set the number of kids in this slot to zero - this slot will now be used to store newborn kids. */
             /* Now we have added all the kids from this timestep, move the pointer to the place in the array for kids to add at the next time step. */
-        //if ((patch[p].child_population[hivstatus].transition_to_adult_index_n_child)>&(patch[p].child_population[hivstatus].n_child[0]))
-        //  (patch[p].child_population[hivstatus].transition_to_adult_index_n_child)--;
-        //else
-        //  patch[p].child_population[hivstatus].transition_to_adult_index_n_child = &(patch[p].child_population[hivstatus].n_child[(AGE_ADULT+1)*N_TIME_STEP_PER_YEAR-1]);
 
         if ((patch[p].child_population[hivstatus].debug_tai)>0){
             (patch[p].child_population[hivstatus].debug_tai)--;
@@ -2070,12 +1876,8 @@ void add_new_kids(double t, patch_struct *patch, int p){
     int y0;
     double f;
     get_unpd_time_indices(t, &y0, &f);
-    //printf("f=%lf y0=%i\n",f,y0);
     double childhood_mortality_rate = childhood_mortality(patch[p].param, t);
-    //printf("t=%6.4lf\n",t);
-    //print_here_string("HEY!!!",1);
     for (aa=(UNPD_FERTILITY_YOUNGEST_AGE-AGE_ADULT); aa<=(UNPD_FERTILITY_OLDEST_AGE-AGE_ADULT); aa++){
-        //printf("aa=%i\n",aa);
 
         fflush(stdout);
         ai = aa + patch[p].age_list->age_list_by_gender[FEMALE]->youngest_age_group_index;
@@ -2084,42 +1886,16 @@ void add_new_kids(double t, patch_struct *patch, int p){
 
 
         /* Get the fertility rate for this age group: */
-        //printf("t=%lf age=%i y0=%i f=%lf peragefert = %lf n_age = %li\n",t,aa,y0,f,per_woman_fertility_rate(aa+AGE_ADULT, param, y0, f),age_list->age_list_by_gender[FEMALE]->number_per_age_group[ai]);
-
         /* We discount the fertility rate by the childhood mortality rate - so we only include children who will survive to adulthood. */
         age_group_fertility_rate_per_timestep = TIME_STEP*(1.0-childhood_mortality_rate)*per_woman_fertility_rate(aa+AGE_ADULT, patch[p].param, y0, f);      // * age_list->age_list_by_gender[FEMALE]->number_per_age_group[ai];
-
-        //printf("t=%6.4lf age=%i afsr=%8.6lf childhood_mortality_rate=%6.4lf \n",t,aa,per_woman_fertility_rate(aa+AGE_ADULT, param, y0, f),childhood_mortality_rate);
         n_births += gsl_ran_binomial (rng, age_group_fertility_rate_per_timestep, patch[p].age_list->age_list_by_gender[FEMALE]->number_per_age_group[ai]);
 
     }
     /* Store number of new births for model validation/debugging: */
     patch[p].DEBUG_NBIRTHS = patch[p].DEBUG_NBIRTHS + n_births;
 
-    //printf("t=%6.4lf births=%li\n",t,n_births);
-    /* Now normalize to per-capita female population rate per timestep. */ 
-
-//  long npop_check = 0;
-//
-//  for (aa=AGE_ADULT;aa<MAX_AGE;aa++){
-//      ai = aa + age_list->age_list_by_gender[FEMALE]->youngest_age_group_index;
-//      while (ai>(MAX_AGE-AGE_ADULT-1))
-//          ai= ai - (MAX_AGE-AGE_ADULT);
-//      npop_check += age_list->age_list_by_gender[FEMALE]->number_per_age_group[ai];
-//  }
-//  npop_check += age_list->age_list_by_gender[FEMALE]->number_oldest_age_group;
-
-    //printf("npopf = %ld\n",npop_check);
-
-    //total_population_fertility_rate *= (TIME_STEP /n_population_stratified->total_pop_size_per_gender[FEMALE]);
-
-
-    //n_births = gsl_ran_binomial (rng, total_population_fertility_rate, n_population_stratified->total_pop_size_per_gender[FEMALE]);
-
-
 
     if (PRINT_DEBUG_DEMOGRAPHICS){
-        //if ((patch[p].child_population[0].transition_to_adult_index_n_child)<&(patch[p].child_population[0].n_child[(AGE_ADULT+1)*N_TIME_STEP_PER_YEAR-1]))
         if ((patch[p].child_population[0].debug_tai)<((AGE_ADULT+1)*N_TIME_STEP_PER_YEAR-1))
             printf("BIRTHSx were: %li %li are: %i %i\n",patch[p].child_population[0].n_child[patch[p].child_population[0].debug_tai+1],patch[p].child_population[1].n_child[patch[p].child_population[1].debug_tai+1],(int) floor(n_births*1.0),(int) floor(n_births*0.0));
         else
@@ -2127,21 +1903,15 @@ void add_new_kids(double t, patch_struct *patch, int p){
     }
 
     // This is a debugging routine for future use - assume that no children are HIV+ at this point.
-    //if ((patch[p].child_population[0].transition_to_adult_index_n_child)<(&(patch[p].child_population[0].n_child[(AGE_ADULT+1)*N_TIME_STEP_PER_YEAR-1])))
-    //  *(patch[p].child_population[0].transition_to_adult_index_n_child+1) = (int) floor(n_births*1.0);
     if ((patch[p].child_population[0].debug_tai) < ((AGE_ADULT+1)*N_TIME_STEP_PER_YEAR-1))
         patch[p].child_population[0].n_child[patch[p].child_population[0].debug_tai+1] = (int) floor(n_births*1.0);
     else
         (patch[p].child_population[0].n_child[0]) = (int) floor(n_births*1.0);
 
-
-    //if ((patch[p].child_population[1].transition_to_adult_index_n_child)<(&(patch[p].child_population[1].n_child[(AGE_ADULT+1)*N_TIME_STEP_PER_YEAR-1])))
-    //  *(patch[p].child_population[1].transition_to_adult_index_n_child+1) = (int) floor(n_births*0.0);
     if ((patch[p].child_population[1].debug_tai) < ((AGE_ADULT+1)*N_TIME_STEP_PER_YEAR-1))
         patch[p].child_population[1].n_child[patch[p].child_population[1].debug_tai+1] = (int) floor(n_births*0.0);
     else
         (patch[p].child_population[1].n_child[0]) = (int) floor(n_births*0.0);
-
 }
 
 
@@ -2264,19 +2034,11 @@ void individual_death_AIDS(age_list_struct *age_list, individual *dead_person,
     }
 
     if (WRITE_DEBUG_HIV_DURATION==1){
-        /* Only consider people who are ART-naive for now: */
-        //if (dead_person->ART_status==ARTNAIVE||dead_person->ART_status==ARTNEG)
         write_hiv_duration(dead_person, t, file_data_store);
-        //      FILE *DEBUGHIVDURFILE;
-        //      DEBUGHIVDURFILE = fopen("DEBUGHIVDURATION.csv","a");
-        //      fprintf(DEBUGHIVDURFILE,"%6.4lf %d %8.6f %6.4lf %d %d %d\n",t,dead_person->patch_no,dead_person->DEBUGTOTALTIMEHIVPOS,dead_person->t_sc,dead_person->ART_status,dead_person->SPVL_cat,dead_person->cd4);
-        //      fclose(DEBUGHIVDURFILE);
     }
 
     /* The final argument is reason for being removed from survival cohort. 1="AIDS death", 2="death from natural causes", 3="start ART". Note we don't bother with the end of the simulation for now. */
     if (WRITE_DEBUG_HIV_DURATION_KM==1){
-    /* Only consider people who are ART-naive for now: */
-        //if (dead_person->ART_status==ARTNAIVE||dead_person->ART_status==ARTNEG)
             write_hiv_duration_km(dead_person, t, file_data_store, 1);
     }
 
@@ -2295,9 +2057,6 @@ void individual_death_AIDS(age_list_struct *age_list, individual *dead_person,
                 printf("Number of people[%i] gender %i age %i = %li.\n",ai,aa+AGE_ADULT,g,age_list->age_list_by_gender[g]->number_per_age_group[ai]);
         }
 
-
-        //// Remove this individual from individual_population?? - note this isn't easy.
-
         remove_dead_person_from_susceptible_in_serodiscordant_partnership(dead_person, susceptible_in_serodiscordant_partnership, n_susceptible_in_serodiscordant_partnership);
 
         remove_dead_person_from_list_available_partners(t, dead_person, pop_available_partners,n_pop_available_partners);
@@ -2314,7 +2073,6 @@ void individual_death_AIDS(age_list_struct *age_list, individual *dead_person,
         //////// For DEBUGGING:
         dead_person->cd4 = DEAD;
         dead_person->DoD = t;
-        //dead_person->DoB = -1;
 
         age_list_index = 0;
         while ((age_list_index<age_list->age_list_by_gender[g]->number_per_age_group[ai]) && (age_list->age_list_by_gender[g]->age_group[ai][age_list_index]->id!=dead_person->id)){
@@ -2327,10 +2085,7 @@ void individual_death_AIDS(age_list_struct *age_list, individual *dead_person,
             fflush(stdout);
             exit(1);
         }
-
         update_age_list_death(age_list, g, ai, age_list_index, t, p);
-
-
     }
     /******************** Now deal with oldest people: ********************/
     else{

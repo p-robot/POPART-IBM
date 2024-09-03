@@ -275,8 +275,6 @@ void count_population_size_three_ways(patch_struct *patch, int p, double t){
         fflush(stdout);
         exit(1);
     }
-
-    //printf("Patch %i t=%6.4lf male: %ld %ld %ld female: %ld %ld %ld\n",p,t,n_m_indiv,n_m_agelist,n_m_pop,n_f_indiv,n_f_agelist,n_f_pop);
 }
 
 
@@ -293,7 +291,6 @@ int is_in_patch_individual_population(long id, patch_struct *patch, int p)
     {
         res = 1;
         printf("Individual %ld was found in patch %d at position %ld in list\n",id,p,k);
-        //print_individual(&patch[p].individual_population[k]);
         fflush(stdout);
     }else
     {
@@ -363,8 +360,6 @@ void generate_demographics_byage_gender_file_header(char *age_group_string, int 
 void write_demographics_byage_gender(patch_struct *patch, int p, double t, file_struct *file_data_store){
     long i;
     int ag;
-
-
     file_data_store->AGEDISTRIBUTIONFILE[p] = fopen(file_data_store->filename_debug_agedistribution[p],"a");
     if (file_data_store->AGEDISTRIBUTIONFILE[p]==NULL){
         printf("Cannot open output_file in write_demographics_byage_gender().\n");
@@ -372,7 +367,6 @@ void write_demographics_byage_gender(patch_struct *patch, int p, double t, file_
         fflush(stdout);
         exit(1);
     }
-
 
     /* Number of men/women in each age group (age groups correspond to UNPD 5 year age groups apart from 13-14 year olds. Note that we DO NOT want to count children as childhood mortality is taken to occur at birth so the number of children in the model is the number of children who will survive to age 13, not the number of children alive at any given time. */
     long  *num_age_people_m;
@@ -448,17 +442,21 @@ void write_demographics_byage_gender(patch_struct *patch, int p, double t, file_
 }
 
 
+/*****************************************************************************/
+/* Write blank file and header for the file called OneYearAgeGp_*.csv
+
+For now we only use data from patch 0.  
+
+Arguments
+---------
+file_data_store : pointer to file_struct structure
+    This structure stores the file names of the files to write.  The file in
+    question has its file name stored in the attribute called 
+    file_data_store->ONEYEARAGEDISTRIBUTIONFILE
+*/
+/*****************************************************************************/
+
 void blank_one_year_age_groups_including_kids(file_struct *file_data_store){
-    /* Write blank file and header for the file called OneYearAgeGp_*.csv
-    
-    For now we only use data from patch 0.  
-    
-    Arguments
-    ---------
-    file_data_store : pointer to file_struct structure
-        This structure stores the file names of the files to write.  The file in question has its
-        file name stored in the attribute called file_data_store->ONEYEARAGEDISTRIBUTIONFILE
-    */
     
     // Open a connection to the file
     file_data_store->ONEYEARAGEDISTRIBUTIONFILE[0] =
@@ -498,37 +496,38 @@ void blank_one_year_age_groups_including_kids(file_struct *file_data_store){
 }
 
 
+/*****************************************************************************/
+/* Write population size per yearly age groups to file for a single year (append to file)
+
+This function writes the totaol population size for children from ages 0-1 until 13-14 at
+yearly age gaps (children aren't split by gender in the simulation), population sizes are then 
+recorded from 14-15 until 80+ at yearly age groups split for males and females.  These
+values are taken from the structures `child_population` and `age_list->age_list_by_gender` 
+within the patch structure respectively.  The file in which these values are appended starts 
+with the prefix 'OneYearAgeGp_*.csv'.  This function is called from main.c and is only triggered
+if the macro (defined in constants.h) WRITE_DEBUG_DEMOGRAPHICS_AGE_DISTRIBUTION_ONEYEARINCKIDS is 1.  
+The function blank_one_year_age_groups_including_kids() sets up the file and header line that 
+this function writes to.  
+
+The `child_population` array that's part of the patch structure is indexed by HIV status of the
+children, 0 index for HIV- and 1 index for HIV+.  However, at this stage (Feb 2018) all children
+are HIV- so the second entry in the array is all zeros.  
+
+Arguments
+---------
+file_data_store : pointer to a file_struct structure
+patch : pointer to a patch_struct structure
+p : int
+t : double
+
+Returns
+-------
+Nothing; writes a file to disk
+*/
+/*****************************************************************************/
+
 void write_one_year_age_groups_including_kids(file_struct *file_data_store, patch_struct *patch,
     int p, double t){
-    /* Write population size per yearly age groups to file for a single year (append to file)
-    
-    This function writes the totaol population size for children from ages 0-1 until 13-14 at
-    yearly age gaps (children aren't split by gender in the simulation), population sizes are then 
-    recorded from 14-15 until 80+ at yearly age groups split for males and females.  These
-    values are taken from the structures `child_population` and `age_list->age_list_by_gender` 
-    within the patch structure respectively.  The file in which these values are appended starts 
-    with the prefix 'OneYearAgeGp_*.csv'.  This function is called from main.c and is only triggered
-    if the macro (defined in constants.h) WRITE_DEBUG_DEMOGRAPHICS_AGE_DISTRIBUTION_ONEYEARINCKIDS is 1.  
-    The function blank_one_year_age_groups_including_kids() sets up the file and header line that 
-    this function writes to.  
-    
-    The `child_population` array that's part of the patch structure is indexed by HIV status of the
-    children, 0 index for HIV- and 1 index for HIV+.  However, at this stage (Feb 2018) all children
-    are HIV- so the second entry in the array is all zeros.  
-    
-    Arguments
-    ---------
-    file_data_store : pointer to a file_struct structure
-    patch : pointer to a patch_struct structure
-    p : int
-    t : double
-    
-    Returns
-    -------
-    Nothing; writes a file to disk
-    */
-    
-    
     int i_child, ai_m, ai_f, aa, hivstatus;
     
     // Open a connection to the file in question and append to it ("a")
@@ -625,6 +624,9 @@ void write_one_year_age_groups_including_kids(file_struct *file_data_store, patc
     fclose(file_data_store->ONEYEARAGEDISTRIBUTIONFILE[p]);
 }
 
+/*****************************************************************************/
+
+/*****************************************************************************/
 
 void write_nbirths_nnewadults_ndeaths(file_struct *file_data_store, patch_struct *patch, int year){
 
@@ -643,11 +645,6 @@ void write_nbirths_nnewadults_ndeaths(file_struct *file_data_store, patch_struct
     fprintf(file_data_store->NBIRTHS_NNEWADULTS_NDEATHS_FILE,"\n");
     fclose(file_data_store->NBIRTHS_NNEWADULTS_NDEATHS_FILE);
 }
-
-
-
-
-
 
 
 /* Code not currently used. Would generate the duration of life of people in 5 year age cohorts. */
@@ -674,8 +671,6 @@ void output_life_expectancy(char *output_file_directory, patch_struct *patch, in
         sprintf(templabel,"_Za.csv");
     else
         sprintf(templabel,"_SA.csv");
-
-
 
     strncpy(life_expectancy_filename,output_file_directory,LONGSTRINGLENGTH);
     add_slash(life_expectancy_filename); /* Adds a / or \ as needed if working in directory other than current local dir. */
@@ -711,7 +706,6 @@ void output_life_expectancy(char *output_file_directory, patch_struct *patch, in
             exit(1);
         }
     }
-
 
     long n_by_age_cohort[20];            /* Store number of individual in each age cohort from 1900-2000 - so 20 age groups. */
     double cumulative_life_years[20];    /* Store number of life-years lived of people in cohort. */
@@ -800,9 +794,6 @@ void output_life_expectancy(char *output_file_directory, patch_struct *patch, in
 /***************************************************************************************************/
 /* End of demographic checks. */
 /***************************************************************************************************/
-
-
-
 
 
 /***************************************************************************************************/
@@ -1318,10 +1309,14 @@ void blank_debugging_files(file_struct *file_data_store){
         blank_hazard_file(file_data_store);
 }
 
+
+/*****************************************************************************/
 /* Prints how long each person who is HIV+ and dies of AIDS-related illness is alive for.
  * Allows us to check that HIV duration has the right distribution.
  * Can subset to ART-naive.
  */
+/*****************************************************************************/
+
 void write_hiv_duration(individual *dead_person, double t, file_struct *file_data_store){
     int p = dead_person->patch_no;
     file_data_store->HIVDURATIONFILE[p] = fopen(file_data_store->filename_debughivduration[p],"a");
@@ -1472,8 +1467,6 @@ void write_art_states(patch_struct *patch, int year, debug_struct *debug, file_s
     long temp_hivnegstate_counter;
 
 
-
-
     for (p=0;p<NPATCHES;p++){
         for (art_i=0;art_i<(ARTDEATH+2);art_i++)
             temp_state_counter[art_i] = 0;
@@ -1526,23 +1519,6 @@ void write_art_states(patch_struct *patch, int year, debug_struct *debug, file_s
                 print_debugerror_shouldbezero_exit(errorstring);
             }
         }
-
-        //      n_getcd4test_fromuntested = debug->art_vars[p].cascade_transitions[ARTNAIVE+1][ARTNEG+1];
-        //      n_getcd4test_fromartnaive = debug->art_vars[p].cascade_transitions[ARTNAIVE+1][ARTNAIVE+1];
-        //      n_getcd4test_fromartdropout = debug->art_vars[p].cascade_transitions[ARTNAIVE+1][ARTDROPOUT+1];
-        //      n_getcd4test_fromcascadedropout = debug->art_vars[p].cascade_transitions[ARTNAIVE+1][CASCADEDROPOUT+1];
-        //      /* Check for impossible transitions: */
-        //      for (art_i=EARLYART+1;art_i<ARTDROPOUT+1;art_i++){
-        //          if(debug->art_vars[p].cascade_transitions[ARTNAIVE+1][art_i+1]!=0){
-        //              char errorstring[50];
-        //              sprintf(errorstring,"art_vars[p].cascade_transitions[ARTNAIVE+1][%i]",art_i);
-        //              print_debugerror_shouldbezero_exit(errorstring);
-        //          }
-        //      }
-        //      if(debug->art_vars[p].cascade_transitions[ARTNAIVE+1][ARTDEATH+1]!=0)
-        //          print_debugerror_shouldbezero_exit("art_vars[p].cascade_transitions[ARTNAIVE+1][ARTDEATH+1]");
-
-
 
         n_startART_fromuntested = debug->art_vars[p].cascade_transitions[ARTNEG+1][EARLYART+1];
         n_startART_fromartnaive = debug->art_vars[p].cascade_transitions[ARTNAIVE+1][EARLYART+1];
@@ -1650,10 +1626,9 @@ void write_art_states(patch_struct *patch, int year, debug_struct *debug, file_s
 
 }
 
-
-/****************************************************************************************************************
- * Stuff related to CHiPs visits:
- ****************************************************************************************************************/
+/*****************************************************************************/
+// CHiPs visits:
+/*****************************************************************************/
 
 void reset_annual_chips_visit_counter(age_list_struct *age_list){
     int g,ai,n;
@@ -1665,9 +1640,6 @@ void reset_annual_chips_visit_counter(age_list_struct *age_list){
             age_list->age_list_by_gender[g]->oldest_age_group[n]->VISITED_BY_CHIPS_THISROUND = FALSE;
     }
 }
-
-
-
 
 
 /* This one only knows about people who are alive at the end of the round. */
@@ -1778,12 +1750,6 @@ void print_chips_statistics_using_chipsonly(patch_struct *patch, int p, double t
                 //
                 denom_chips_visits[g]++;
 
-                //              if (patch[p].chips_sample->list_ids_to_visit[g][ac][i]==9326)
-                //                  printf("Checking %li. Status = %i\n",patch[p].chips_sample->list_ids_to_visit[g][ac][i],patch[p].individual_population[patch[p].chips_sample->list_ids_to_visit[g][ac][i]].VISITED_BY_CHIPS_THISROUND);
-
-                //              if (patch[p].individual_population[patch[p].chips_sample->list_ids_to_visit[g][ac][i]].VISITED_BY_CHIPS_THISROUND!=0 && patch[p].individual_population[patch[p].chips_sample->list_ids_to_visit[g][ac][i]].VISITED_BY_CHIPS_THISROUND!=1)
-                //                  printf("Error: at t=%6.4lf person.VISITED_BY_CHIPS_THISROUND=%i person.id=%li person.NCHIPSVISITS = %i\n",t,patch[p].individual_population[patch[p].chips_sample->list_ids_to_visit[g][ac][i]].VISITED_BY_CHIPS_THISROUND,patch[p].chips_sample->list_ids_to_visit[g][ac][i],patch[p].individual_population[patch[p].chips_sample->list_ids_to_visit[g][ac][i]].NCHIPSVISITS);
-
                 /* Since VISITED_BY_CHIPS_THISROUND=0 if not visited, and 1 if visited, can sum over this: */
                 n_visited_by_chips_this_round += patch[p].individual_population[patch[p].chips_sample->list_ids_to_visit[g][ac][i]].VISITED_BY_CHIPS_THISROUND;
                 /* v is the lifetime number of visits this individual has had by CHiPs. */
@@ -1814,7 +1780,6 @@ void print_chips_statistics_using_chipsonly(patch_struct *patch, int p, double t
 }
 
 
-
 void output_hazard_over_time_period(double t,double hazard, individual *susceptible, individual *pos_partner, file_struct *file_data_store, output_struct *output){
     int infector_hiv_cd4_acute;
     char temp_string_hazard[100];
@@ -1833,12 +1798,6 @@ void output_hazard_over_time_period(double t,double hazard, individual *suscepti
         write_hazard_data(file_data_store, output->hazard_output_string);
         /* Empty output->phylogenetics_output_string. To do this we just need to set the first character to be '\0'. */
         (output->hazard_output_string)[0] = '\0';
-        // DEBUG - checks that string length is reset to zero.
-        //printf("New length = %lu\n",strlen(output->hazard_output_string));
-        //printf("Error - need to increase size of HAZARD_OUTPUT_STRING_LENGTH. Exiting\n");
-        //printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
-        //fflush(stdout);
-        //exit(1);
     }
 
     /* Add to existing hazard output string. */
@@ -1852,10 +1811,9 @@ void write_hazard_data(file_struct *file_data_store, char *hazard_output_string)
     fclose(file_data_store->HAZARD_FILE);
 }
 
+
 void blank_hazard_file(file_struct *file_data_store){
     file_data_store->HAZARD_FILE = fopen(file_data_store->filename_hazard_output,"w");
     fprintf(file_data_store->HAZARD_FILE,"Hazard,t,SusceptibleCircStatus,PartnerGender,PartnerHIVstatus,PartnerARTstatus,PartnerPatchNumber,SusceptibleRiskGp,PartnerRiskGp,SPVL\n");
     fclose(file_data_store->HAZARD_FILE);
 }
-
-

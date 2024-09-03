@@ -14,7 +14,7 @@
     along with the PopART IBM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
+/*****************************************************************************/
 /* HIV infection processes for the PopART model:
  * hiv_transmission_probability(): For a HIV+ partner determines their per-timestep P(trans) given their CD4 stage, SPVL, ART status, gender.
  * hiv_acquisition():   For a given individual, determines if HIV acquisition occurs through sexual contact with any infected partner (ie in partner_pairs_HIVpos[]) at a given timestep - using hiv_transmission_probability() to get per-individual transmission probabilities and assuming they sum up to total transmission probability.
@@ -43,7 +43,7 @@
  * dropout_process(): Carries out the processes when drop out of care (restarting HIV progression if needed).
  * carry_out_cascade_events_per_timestep(): Function is the equivalent to carry_out_HIV_events_per_timestep() but for cascade events. At each timestep this function is called, and carries out the cascade-related events scheduled in cascade_events[i][] at that timestep i.
  */
-
+/*****************************************************************************/
 
 #include "hiv.h"
 #include "constants.h"
@@ -54,14 +54,18 @@
 #include "debug.h"
 #include "pc.h"
 
+
+/*****************************************************************************/
 /* Function: immune_biomarker_kassanjee()
 Generate immune biomarker value according to 'base case' of Kassanjee et al., (2017)
 */
+/*****************************************************************************/
+
 double immune_biomarker_kassanjee(double t_days){
     return (double) 85 * (double) 1/( (double) 1 + pow((t_days/ (double) 190), -4.0));
 }
 
-
+/*****************************************************************************/
 /* Function: get_spvl_cat()
 
 Return set-point viral load (SPVL) category given SPVL.  SPVL categories are as follows:
@@ -80,6 +84,7 @@ Returns
 -------
 An individual's set-point viral load category. 
 */
+/*****************************************************************************/
 
 int get_spvl_cat(double spvl_num){
     if(spvl_num < 4.0)
@@ -92,7 +97,7 @@ int get_spvl_cat(double spvl_num){
         return 3;
 }
 
-
+/*****************************************************************************/
 /* Function: draw_inital_SPVL()
 Generate set-point viral load (SPVL) for seeded infections based on log normal distribution:
  
@@ -110,6 +115,7 @@ Returns
 -------
 Nothing; sets the SPVL_num_E and SPVL_num_G attributes of the seroconverter individual
 */
+/*****************************************************************************/
 
 void draw_inital_SPVL(individual *seroconverter, parameters *param){
     
@@ -125,6 +131,7 @@ void draw_inital_SPVL(individual *seroconverter, parameters *param){
 }
 
 
+/*****************************************************************************/
 /* Function: inherit_spvl()
 Determine set-point viral load (SPVL) of seroconverter given SPVL of infector
 
@@ -146,6 +153,7 @@ Returns
 -------
 Nothing; assigns SPVL_num_G and SPVL_num_E attributes to the seroconverter individual
 */
+/*****************************************************************************/
 
 void inherit_spvl(individual *seroconverter, individual *infector, parameters *param){
     
@@ -157,6 +165,7 @@ void inherit_spvl(individual *seroconverter, individual *infector, parameters *p
 }
 
 
+/*****************************************************************************/
 /* Function: get_mean_time_hiv_progression()
 Calculate mean time to next CD4 progression event for an individual, adjusting for SPVL, 
 and whether progression is by SPVL category or using a Cox PH model for SPVL. 
@@ -174,6 +183,7 @@ Returns
 mean_time_to_next_event : double
     Mean time (in years) until the next CD4 progression event for the individual `individual`.  
 */
+/*****************************************************************************/
 
 double get_mean_time_hiv_progression(parameters *param, individual *indiv){
     
@@ -216,6 +226,7 @@ double get_mean_time_hiv_progression(parameters *param, individual *indiv){
 }
 
 
+/*****************************************************************************/
 /* Function: get_RR_SPVL()
 Determine relative rate of increased infectiousness as a function of set-point viral load.
 
@@ -235,6 +246,7 @@ Returns
 -------
 double: V^beta_k / (V^beta_k + beta_50^beta_k)
 */
+/*****************************************************************************/
 
 double get_RR_SPVL(double SPVL, parameters *param){
     // Get the SPVL from the log10(SPVL)
@@ -245,6 +257,7 @@ double get_RR_SPVL(double SPVL, parameters *param){
 }
 
 
+/*****************************************************************************/
 /* Function: hiv_transmission_probability()
 Determine per-timestep probability of transmission from an HIV+ partner 
 
@@ -282,6 +295,7 @@ if (HIVpos_partner->HIV_status == ACUTE){
 ```
 Using `git show 649265ba` (a commit on 31 August 2018) will show the details of this code.  
 */
+/*****************************************************************************/
 
 double hiv_transmission_probability(individual* HIVpos_partner, parameters *param){
     
@@ -317,6 +331,7 @@ double hiv_transmission_probability(individual* HIVpos_partner, parameters *para
 }
 
 
+/*****************************************************************************/
 /* Function: hiv_acquisition()
 Determine whether a single individual in one (or more) serodiscordant partnerships gets
 infected in a timestep.  If the individual gets infected then update all relevant lists (they 
@@ -343,6 +358,7 @@ file_data_store : pointer to a file_struct structure
 Returns
 -------
 */
+/*****************************************************************************/
 
 void hiv_acquisition(individual* susceptible, double time_infect, patch_struct *patch, int p,
     all_partnerships *overall_partnerships, output_struct *output, debug_struct *debug, 
@@ -482,8 +498,6 @@ void hiv_acquisition(individual* susceptible, double time_infect, patch_struct *
         exit(1);
     }
 
-    //printf("Individual %ld is subject to infection hazard %lg\n", susceptible->id, total_hazard_per_timestep);
-
     /* Now see if transmission occurs (Bernoulli trial - could replace by gsl_ran_bernoulli(rng,total_hazard_per_timestep): */ 
     double x = gsl_rng_uniform (rng);
     if(x <= total_hazard_per_timestep){
@@ -578,23 +592,17 @@ void hiv_acquisition(individual* susceptible, double time_infect, patch_struct *
             patch[p].PANGEA_N_ANNUALACUTEINFECTIONS++;
         }
 
-        /*printf("-- time_infect %lg\n",time_infect);
-        printf("-- susceptible->id %ld\n",susceptible->id);
-        printf("-- infector->id %ld\n",susceptible -> partner_pairs_HIVpos[infector_index] -> ptr[partner_gender]->id);*/
-
         // Phylogenetic transmission outputs
         if(p == PHYLO_PATCH && WRITE_PHYLOGENETICS_OUTPUT == 1){
             store_phylogenetic_transmission_output(output, time_infect, susceptible, 
                 susceptible->partner_pairs_HIVpos[infector_index]->ptr[partner_gender], 
                 file_data_store, t0, t_step);
         }
-        //printf("Individual %d is infected by individual %d\n",
-        //  susceptible->id,
-        //    susceptible->partner_pairs_HIVpos[infector_index]->ptr[partner_gender]->id);
     }
 }
 
 
+/*****************************************************************************/
 /* Function: find_who_infected()
 Determine which partner transmitted HIV infection if someone has more than one HIV+ partner.
 
@@ -616,6 +624,7 @@ Index of the partner who transmitted the infection which can be used to referenc
 susceptible->partner_pairs_HIVpos[] where `susceptible` is the individual structure of the 
 susceptible partner.  
 */
+/*****************************************************************************/
 
 int find_who_infected(int numberpos_partners, double total_hazard){
     
@@ -635,6 +644,7 @@ int find_who_infected(int numberpos_partners, double total_hazard){
 }
 
 
+/*****************************************************************************/
 /* Function: inform_partners_of_seroconversion_and_update_list_serodiscordant_partnerships()
 Update lists of serodiscorant partnerships following a seroconversion.  
 
@@ -663,6 +673,7 @@ Returns
 Nothing; adjusts the partnerships attributes of the seroconverter and each of the 
 seroconverter's partners, and 
 */
+/*****************************************************************************/
 
 void inform_partners_of_seroconversion_and_update_list_serodiscordant_partnerships(
     individual* seroconverter, individual** susceptible_in_serodiscordant_partnership, 
@@ -725,13 +736,15 @@ void inform_partners_of_seroconversion_and_update_list_serodiscordant_partnershi
 }
 
 
+/*****************************************************************************/
 /* Function: new_infection()
 Set variables related to HIV in the individual structure for a newly infected individual. 
 
 Allocates what the next hiv-related event to happen (after acute infection if relevant) is: CD4 progression or AIDS death/emergency start ART
 Also updates the counts of incident and prevalent cases. 
-
 */
+/*****************************************************************************/
+
 void new_infection(double time_infect, int SEEDEDINFECTION, individual* seroconverter, 
     individual *infector, population_size_one_year_age *n_infected, 
     population_size_one_year_age *n_newly_infected, age_list_struct *age_list, 
@@ -753,7 +766,6 @@ void new_infection(double time_infect, int SEEDEDINFECTION, individual* seroconv
         printf("New HIV infection of adult %ld from patch %d and gender %d at time %6.4f\n",seroconverter->id,seroconverter->patch_no,g,time_infect);
         fflush(stdout);
     }
-
 
     if(seroconverter->id==FOLLOW_INDIVIDUAL && seroconverter->patch_no==FOLLOW_PATCH)
     {
@@ -957,8 +969,6 @@ void new_infection(double time_infect, int SEEDEDINFECTION, individual* seroconv
         (n_newly_infected->pop_size_per_gender_age1_risk[seroconverter->gender][ai_inc][seroconverter->sex_risk])++;
 
         (n_infected_cumulative->pop_size_per_gender_age1_risk[seroconverter->gender][ai_inc_c][seroconverter->sex_risk])++;
-        //printf("+++ One new HIV+ \n");
-        //fflush(stdout);
     }else{
 
         /* looking for the seroconverter in the age_list --> presumably only for debugging, could get rid of this? */
@@ -978,6 +988,8 @@ void new_infection(double time_infect, int SEEDEDINFECTION, individual* seroconv
     }
 }
 
+
+/*****************************************************************************/
 /* Function: draw_initial_infection()
 Seed initial HIV infection.
 
@@ -1011,6 +1023,7 @@ individual is a seeding case this function calls new_infection(), increments the
 cases, sets the individual's SPVL to -1, and updates lists of serodiscorant partnerships following
 a seroconversion.  
 */
+/*****************************************************************************/
 
 void draw_initial_infection(double t, individual* indiv, patch_struct *patch, int p,
     all_partnerships *overall_partnerships, output_struct *output, file_struct *file_data_store, 
@@ -1098,6 +1111,7 @@ void draw_initial_infection(double t, individual* indiv, patch_struct *patch, in
 }
 
 
+/*****************************************************************************/
 /* Function: next_hiv_event()
 Determine the next HIV-related event for an individual given their current state (CD4, SPVL, etc). 
 
@@ -1125,6 +1139,7 @@ Returns
 -------
 Nothing;
 */
+/*****************************************************************************/
 
 void next_hiv_event(individual* indiv, individual ***hiv_pos_progression, 
     long *n_hiv_pos_progression, long *size_hiv_pos_progression, parameters *param, double t,
@@ -1310,6 +1325,7 @@ void next_hiv_event(individual* indiv, individual ***hiv_pos_progression,
 }
 
 
+/*****************************************************************************/
 /* Function: carry_out_HIV_events_per_timestep()
 Go through the list of scheduled HIV events for HIV+ people for this timestep
 
@@ -1350,6 +1366,7 @@ Returns
 Nothing; carries out HIV events for a particular timestep for individuals with a scheduled event and
 schedules new events for those individuals.  Various lists and individual attributes are updated.  
 */
+/*****************************************************************************/
 
 void carry_out_HIV_events_per_timestep(double t, patch_struct *patch, int p, 
     all_partnerships *overall_partnerships, debug_struct *debug, file_struct *file_data_store){
@@ -1531,6 +1548,7 @@ void carry_out_HIV_events_per_timestep(double t, patch_struct *patch, int p,
 }
 
 
+/*****************************************************************************/
 /* Function: get_window_result()
 Adjust HIV test to allow for the fact that antibody/antigen tests do not work for first few weeks.
 
@@ -1555,6 +1573,7 @@ Returns
 -------
 int of negative test result (0) or positive test result (1).  
 */
+/*****************************************************************************/
 
 int get_window_result(double time_since_sc, double t, patch_struct *patch){
     
@@ -1586,6 +1605,7 @@ int get_window_result(double time_since_sc, double t, patch_struct *patch){
 }
 
 
+/*****************************************************************************/
 /* Function: joins_preart_care()
 Determine if a person will join pre-ART care or dropout as a function of time, their CD4, etc. 
 
@@ -1614,6 +1634,7 @@ Returns
 -------
 integer : 0 means the individual drops out, 1 means the individual stays in pre-ART care
 */
+/*****************************************************************************/
 
 int joins_preart_care(individual* indiv, parameters *param, double t, 
     cumulative_outputs_struct *cumulative_outputs, calendar_outputs_struct *calendar_outputs){
@@ -1667,6 +1688,7 @@ int joins_preart_care(individual* indiv, parameters *param, double t,
 }
 
 
+/*****************************************************************************/
 /* Function: remains_in_cascade()
 Test that an HIV+ person remains in the background care cascade until the next CD4 test when they've
 just had a CD4 test and were not eligible. 
@@ -1690,6 +1712,7 @@ Returns
 -------
 integer: whether individual drops out (0) or remains (1) in cascade
 */
+/*****************************************************************************/
 
 int remains_in_cascade(individual* indiv, parameters *param, int is_popart){
     
@@ -1702,6 +1725,7 @@ int remains_in_cascade(individual* indiv, parameters *param, int is_popart){
 }
 
 
+/*****************************************************************************/
 /* Function: measured_cd4_cat()
 Given a 'real' CD4 category, draws the measured CD4
 
@@ -1723,8 +1747,9 @@ real_cd4_cat : int
 
 Returns
 -------
-The measured CD4 cat (int).  
-*/ 
+The measured CD4 cat (int).
+*/
+/*****************************************************************************/
 
 int measured_cd4_cat(parameters *param, int real_cd4_cat){
     
@@ -1742,6 +1767,7 @@ int measured_cd4_cat(parameters *param, int real_cd4_cat){
 }
 
 
+/*****************************************************************************/
 /* Function: art_cd4_eligibility_group()
 Return the highest CD4 group that is eligible for ART at time t in a given setting.
 
@@ -1759,6 +1785,7 @@ Returns
 -------
 Integer giving the highest CD4 group that is eligible for ART at current time.  
 */
+/*****************************************************************************/
 
 int art_cd4_eligibility_group(parameters *param, double t){
 
@@ -1776,6 +1803,7 @@ int art_cd4_eligibility_group(parameters *param, double t){
 }
 
 
+/*****************************************************************************/
 /* Function: is_eligible_for_art()
 Determin if individual is eligible for ART
  
@@ -1800,6 +1828,7 @@ Returns
 -------
 Integer denoting eligibility of an individual for ART; eligible (1) or non-eligible (0)  
 */
+/*****************************************************************************/
 
 int is_eligible_for_art(individual* indiv, parameters *param, double t, patch_struct *patch, int p){
     
@@ -1831,6 +1860,7 @@ int is_eligible_for_art(individual* indiv, parameters *param, double t, patch_st
 }
 
 
+/*****************************************************************************/
 /* Function: get_time_emergency_start_ART()
 Return length of time it takes to start ART once an individual's CD4 goes below 200.
 
@@ -1851,7 +1881,8 @@ Returns
 -------
 double : the duration of time until an individual starts emergency ART (or end time of the
 simulation) if this time is beyond the end of the simulation.  
-*/ 
+*/
+/*****************************************************************************/
 
 double get_time_emergency_start_ART(individual* indiv, parameters *param, double t){
     
@@ -1881,6 +1912,7 @@ double get_time_emergency_start_ART(individual* indiv, parameters *param, double
 }
 
 
+/*****************************************************************************/
 /* Function: start_ART_process()
 Set up state when beginning ART (including emergency ART).  
 
@@ -1924,8 +1956,9 @@ file_data_store : pointer to a file_struct structure.
 Returns
 -------
 Nothing; adjusts attributions of the individual in question and other lists of events if certain
-processes are triggered.  
+processes are triggered.
 */
+/*****************************************************************************/
 
 void start_ART_process(individual* indiv, parameters *param, double t, 
     individual ***cascade_events, long *n_cascade_events, long *size_cascade_events, 
@@ -2142,6 +2175,7 @@ void start_ART_process(individual* indiv, parameters *param, double t,
 }
 
 
+/*****************************************************************************/
 /* Function: draw_initial_hiv_tests()
 
 Schedule HIV tests for individuals in the population.  When HIV testing first begins in the country
@@ -2165,6 +2199,7 @@ Returns
 -------
 Nothing; HIV test are scheduled.  
 */
+/*****************************************************************************/
 
 void draw_initial_hiv_tests(parameters *param, age_list_struct *age_list, double t, 
     individual ***cascade_events, long *n_cascade_events, long *size_cascade_events){
@@ -2215,6 +2250,7 @@ void draw_initial_hiv_tests(parameters *param, age_list_struct *age_list, double
 }
 
 
+/*****************************************************************************/
 /* Function: draw_hiv_tests()
 Schedule HIV test for the whole population at fixed times.  
 
@@ -2243,6 +2279,7 @@ Returns
 -------
 Nothing; schedules HIV tests for the population
 */
+/*****************************************************************************/
 
 void draw_hiv_tests(parameters *param, age_list_struct *age_list, int year, 
     individual ***cascade_events, long *n_cascade_events, long *size_cascade_events, 
@@ -2324,6 +2361,7 @@ void draw_hiv_tests(parameters *param, age_list_struct *age_list, int year,
 }
 
 
+/*****************************************************************************/
 /* Function: schedule_generic_cascade_event()
 Schedule the generic care cascade events in the array cascade_events[].
 
@@ -2342,8 +2380,9 @@ double t_now
 
 Returns
 -------
-Nothing; 
+Nothing;
 */
+/*****************************************************************************/
 
 void schedule_generic_cascade_event(individual* indiv, parameters *param, double t_event,
     individual ***cascade_events, long *n_cascade_events, long *size_cascade_events, double t_now){
@@ -2368,7 +2407,6 @@ void schedule_generic_cascade_event(individual* indiv, parameters *param, double
         exit(1);
     }
     
-    // 
     if(idx_event <= (param->end_time_simul - param->COUNTRY_HIV_TEST_START)*N_TIME_STEP_PER_YEAR){
         
         indiv->idx_cascade_event[0] = idx_event;
@@ -2410,7 +2448,9 @@ void schedule_generic_cascade_event(individual* indiv, parameters *param, double
     }
 }
 
-
+/*****************************************************************************/
+// Function: schedule_new_hiv_test()
+/*****************************************************************************/
 void schedule_new_hiv_test(individual* indiv, parameters *param, double t, 
     individual ***cascade_events, long *n_cascade_events, long *size_cascade_events){
    /* For a given individual, draw when they will next have an HIV test.  
@@ -2473,32 +2513,34 @@ void schedule_new_hiv_test(individual* indiv, parameters *param, double t,
     }
 }
 
+/*****************************************************************************/
+// Function: probability_get_hiv_test_in_next_window()
+/*
+Calculate probability an individual has an HIV test in the next window (t_gap).  
+
+Arguments
+---------
+p_test : pointer to an array of doubles
+t_gap : pointer to a double
+    time period in which to schedule the HIV test
+country_setting : int
+    An identifier for the country in question (see constants.h for the macro definitions for
+    each country).  
+year : int
+    Year (as an integer) in which the HIV test is taking place.  
+COUNTRY_HIV_TEST_START : int
+    The year in which HIV testing started in the country in question.  
+param : pointer to a parameters struct
+    The struct holding all the parameters of the model.  
+
+Returns
+-------
+Nothing; the variables which `p_test` and `t_gap` point to are populated.  
+*/
+/*****************************************************************************/
 
 void probability_get_hiv_test_in_next_window(double *p_test, double *t_gap, int country_setting,
     int year, int COUNTRY_HIV_TEST_START, parameters *param){
-    /*
-    Calculate probability an individual has an HIV test in the next window (t_gap).  
-    
-    Arguments
-    ---------
-    p_test : pointer to an array of doubles
-    t_gap : pointer to a double
-        time period in which to schedule the HIV test
-    country_setting : int
-        An identifier for the country in question (see constants.h for the macro definitions for
-        each country).  
-    year : int
-        Year (as an integer) in which the HIV test is taking place.  
-    COUNTRY_HIV_TEST_START : int
-        The year in which HIV testing started in the country in question.  
-    param : pointer to a parameters struct
-        The struct holding all the parameters of the model.  
-    
-    Returns
-    -------
-    Nothing; the variables which `p_test` and `t_gap` point to are populated.  
-    */
-    
     // Check that HIV testing has started
     if(year < COUNTRY_HIV_TEST_START){
         printf("probability_get_hiv_test_in_next_window() ");
@@ -2518,42 +2560,45 @@ void probability_get_hiv_test_in_next_window(double *p_test, double *t_gap, int 
 }
 
 
+/*****************************************************************************/
+// Function: schedule_hiv_test_fixedtime()
+/* For a given individual draw when they will next have an HIV test
+
+
+The probability of having a test is gender-specific and listed in the array `p_test`.  The 
+period of time in which the HIV test has to occur is between `year` and `year + t_gap`.  The 
+time until the test is drawn as a uniform random variable between these periods.  
+
+This func is used for HIVTESTSCHEDULE = 1 (HIV test scheduling procedure happens for the whole
+population at fixed times).  Only people who have never been tested or previously received a
+negative test are scheduled to be tested.  
+
+
+Arguments
+---------
+indiv : pointer to an individual struct
+param : pointer to a parameters struct
+year : int
+    Year in question
+individual ***cascade_events : pointer to a pointer to a pointer to an individual object
+    Used because `cascade_events` is a multi-dimensional array
+n_cascade_events : pointer to a long
+size_cascade_events : pointer to a long
+t_gap : double
+    Period of time (in years) in which the test should occur.  
+country_setting : int
+p_test : pointer to an array of doubles
+    Array of the gender-specific probability of having an HIV test.  
+
+Returns
+-------
+Nothing; attributes of the individual are updated and schedule_generic_cascade_event is called. 
+*/
+
+/*****************************************************************************/
 void schedule_hiv_test_fixedtime(individual* indiv, parameters *param, int year, 
     individual ***cascade_events, long *n_cascade_events, long *size_cascade_events, double t_gap,
     int country_setting, double *p_test){
-    /* For a given individual draw when they will next have an HIV test
-    
-    
-    The probability of having a test is gender-specific and listed in the array `p_test`.  The 
-    period of time in which the HIV test has to occur is between `year` and `year + t_gap`.  The 
-    time until the test is drawn as a uniform random variable between these periods.  
-    
-    This func is used for HIVTESTSCHEDULE = 1 (HIV test scheduling procedure happens for the whole
-    population at fixed times).  Only people who have never been tested or previously received a
-    negative test are scheduled to be tested.  
-    
-    
-    Arguments
-    ---------
-    indiv : pointer to an individual struct
-    param : pointer to a parameters struct
-    year : int
-        Year in question
-    individual ***cascade_events : pointer to a pointer to a pointer to an individual object
-        Used because `cascade_events` is a multi-dimensional array
-    n_cascade_events : pointer to a long
-    size_cascade_events : pointer to a long
-    t_gap : double
-        Period of time (in years) in which the test should occur.  
-    country_setting : int
-    p_test : pointer to an array of doubles
-        Array of the gender-specific probability of having an HIV test.  
-    
-    Returns
-    -------
-    Nothing; attributes of the individual are updated and schedule_generic_cascade_event is called. 
-    */
-    
     /* This tells us if the cd4 test is due to PopART (is_popart=1) or not (is_popart=0). */
     int is_popart = (indiv->next_cascade_event >= NCASCADEEVENTS_NONPOPART);
 
@@ -2609,11 +2654,13 @@ void schedule_hiv_test_fixedtime(individual* indiv, parameters *param, int year,
 }
 
 
+/*****************************************************************************/
 /* This carries out the processes of someone testing, and assigns them a next event based on the test result
  * (ie start ART, wait in care, drop out of care). 
  * is_popart takes the values 0 (not popart) and 1 (popart) to indicate whether testing is PopART-run (CHiPs) or not.
  * PopART testing 
  * */
+/*****************************************************************************/
 void hiv_test_process(individual* indiv, parameters *param, double t, individual ***cascade_events, 
         long *n_cascade_events, long *size_cascade_events, individual ***hiv_pos_progression, 
         long *n_hiv_pos_progression, long *size_hiv_pos_progression, 
@@ -2626,8 +2673,6 @@ void hiv_test_process(individual* indiv, parameters *param, double t, individual
     double x_sensitivity;
     /* This tells us if the cd4 test is due to PopART (is_popart=1) or not (is_popart=0). */
     int is_popart = (indiv->next_cascade_event>=NCASCADEEVENTS_NONPOPART);
-
-    //printf("hiv_test_process is_popart= %i\n",is_popart);
 
     int WINDOWNEGATIVE = 0; /* 0 if HIV+ tests negative (because recent infection), 1 if tests positive. 
                                 Assign default value so always defined (otherwise may behave weirdly?) */
@@ -2657,9 +2702,6 @@ void hiv_test_process(individual* indiv, parameters *param, double t, individual
             }
         }
     }
-
-
-
     if(indiv->id==FOLLOW_INDIVIDUAL && indiv->patch_no==FOLLOW_PATCH){
         printf("HIV test result for adult %ld at time %6.4f is %d. True HIV status is %i. ART status is %i\n",indiv->id,t,(indiv->HIV_status!=UNINFECTED && WINDOWNEGATIVE!=0),indiv->HIV_status,indiv->ART_status);
         fflush(stdout);
@@ -2765,7 +2807,6 @@ void hiv_test_process(individual* indiv, parameters *param, double t, individual
 
                 /* Allow CD4 retesting to be more frequent. Time to next CD4 test is again the sum of the time between 
                  * getting the HIV test and having the first CD4 test, and the time between consecutive CD4 tests.*/
-                /* DSMBBBBBBBBB - I think this is wrong!. */
                 time_new_cd4 = t + param->t_delay_hivtest_to_cd4test_min[POPART] + param->t_delay_hivtest_to_cd4test_range[POPART] * gsl_rng_uniform (rng);
                 //+ param->t_cd4_retest_min[POPART]    + param->t_cd4_retest_range[POPART] * gsl_rng_uniform (rng);
 
@@ -2798,8 +2839,6 @@ void hiv_test_process(individual* indiv, parameters *param, double t, individual
                 printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
                 fflush(stdout);
                 exit(1);
-                //double time_cd4 = param->COUNTRY_ART_START + gsl_rng_uniform (rng);
-                //indiv->next_cascade_event = CASCADEEVENT_CD4_TEST_POPART;
             }
             debug->art_vars[p].cascade_transitions[ARTNEG+1][ARTNAIVE+1]++;
             schedule_generic_cascade_event(indiv, param, time_cd4, cascade_events, n_cascade_events, size_cascade_events,t);
@@ -2808,33 +2847,37 @@ void hiv_test_process(individual* indiv, parameters *param, double t, individual
 }
 
 
+/*****************************************************************************/
+// Function: schedule_start_of_art()
+/* Give delay in starting ART after testing HIV+ (for those immediately eligible).
+
+This represents all the delays in collecting the HIV test, getting the CD4 test and results,
+and getting drugs.  
+
+Arguments
+---------
+indiv : pointer to an individual structure
+    The individual in question
+param : pointer to a parameters structure
+    All parameters of the simulation
+t : double
+    Current time (decimal year)
+cascade_events : pointer to a multidimensional array of individual structures
+    
+n_cascade_events : pointer to an array of long
+    
+size_cascade_events : pointer to an array of long
+
+Returns
+-------
+Nothing; the individual's next_cascade_event is updated, and the time until they start ART is
+drawn from a bi-exponential distribution, time_start_art, before calling the function
+schedule_generic_cascade_event() to actually schedule the event.  
+*/
+/*****************************************************************************/
+
 void schedule_start_of_art(individual* indiv, parameters *param, double t, 
     individual ***cascade_events, long *n_cascade_events, long *size_cascade_events){
-   /* Give delay in starting ART after testing HIV+ (for those immediately eligible).
-    
-    This represents all the delays in collecting the HIV test, getting the CD4 test and results,
-    and getting drugs.  
-    
-    Arguments
-    ---------
-    indiv : pointer to an individual structure
-        The individual in question
-    param : pointer to a parameters structure
-        All parameters of the simulation
-    t : double
-        Current time (decimal year)
-    cascade_events : pointer to a multidimensional array of individual structures
-        
-    n_cascade_events : pointer to an array of long
-        
-    size_cascade_events : pointer to an array of long
-    
-    Returns
-    -------
-    Nothing; the individual's next_cascade_event is updated, and the time until they start ART is
-    drawn from a bi-exponential distribution, time_start_art, before calling the function
-    schedule_generic_cascade_event() to actually schedule the event.  
-    */
     
     double tmp, t_delay, time_start_art;
     double p_fast = 0, t_fast = 0, t_slow = 0;
@@ -2901,9 +2944,6 @@ void schedule_start_of_art(individual* indiv, parameters *param, double t,
             t_delay = gsl_ran_exponential (rng, t_slow);
         }
         indiv->next_cascade_event = CASCADEEVENT_START_ART_POPART;
-        //printf("Add in counter for CD4 here!!!\n");
-        //printf("time_start_art = %lf\n",time_start_art); // THIS ONE
-        //printf("t=%lf\n",t);
     }
 
     /*Ensure that event happens at least 1 timestep in the future. */
@@ -2922,59 +2962,63 @@ void schedule_start_of_art(individual* indiv, parameters *param, double t,
 }
 
 
+/*****************************************************************************/
+// Function: cd4_test_process()
+/* 
+This is the process of repeated CD4 testing for someone who wasn't eligible for ART at
+their last CD4 test.  Note that the first CD4 test is carried out implicitly as part of
+hiv_test_process.  This function updates everything and schedules the next cascade event that
+will happen.  
+
+There are 3 possible events (as for when someone gets an HIV+ test): 
+
+1. Refuses to enter treatment/care. 
+    In this case the next event will be determined by CD4 (e.g. wait until CD4<200), so add in
+    code to update this as CD4 progression occurs.  Note that leaving is immediate, so we don't
+    schedule an event.  
+
+2. Eligible for ART and starts (after a delay)
+    In this case the next event is starting ART.  Note that delays between HIV testing and
+    starting ART (including getting CD4, picking up results, drugs) all built in to this
+    function.  
+    
+3. Not eligible for ART.
+    In this case the next event is a new CD4 test.  
+
+Assume people test 6-12 months after their last CD4 test (or first HIV test).  Note we separate
+out the first and subsequent tests as the first CD4 test also includes the time for HIV testing
+etc so is longer.  Make sure this is similar to the function for the time to the first repeated
+CD4 test.  Also note that testing is assumed to happen - people may then drop out after their
+test - so count all tests in cumulative outputs.  
+
+
+Arguments
+---------
+individual* indiv
+parameters *param
+double t
+individual ***cascade_events
+long *n_cascade_events
+long *size_cascade_events
+individual ***hiv_pos_progression
+long *n_hiv_pos_progression
+long *size_hiv_pos_progression
+cumulative_outputs_struct *cumulative_outputs
+patch_struct *patch
+int p
+
+Returns
+-------
+Nothing; other events are scheduled and updated.  
+*/
+/*****************************************************************************/
+
 void cd4_test_process(individual* indiv, parameters *param, double t, individual ***cascade_events,
     long *n_cascade_events, long *size_cascade_events, individual ***hiv_pos_progression, 
     long *n_hiv_pos_progression, long *size_hiv_pos_progression, 
     cumulative_outputs_struct *cumulative_outputs, calendar_outputs_struct *calendar_outputs,
     patch_struct *patch, int p){
-    /* 
-    This is the process of repeated CD4 testing for someone who wasn't eligible for ART at
-    their last CD4 test.  Note that the first CD4 test is carried out implicitly as part of
-    hiv_test_process.  This function updates everything and schedules the next cascade event that
-    will happen.  
-    
-    There are 3 possible events (as for when someone gets an HIV+ test): 
-    
-    1. Refuses to enter treatment/care. 
-        In this case the next event will be determined by CD4 (e.g. wait until CD4<200), so add in
-        code to update this as CD4 progression occurs.  Note that leaving is immediate, so we don't
-        schedule an event.  
-    
-    2. Eligible for ART and starts (after a delay)
-        In this case the next event is starting ART.  Note that delays between HIV testing and
-        starting ART (including getting CD4, picking up results, drugs) all built in to this
-        function.  
-        
-    3. Not eligible for ART.
-        In this case the next event is a new CD4 test.  
-    
-    Assume people test 6-12 months after their last CD4 test (or first HIV test).  Note we separate
-    out the first and subsequent tests as the first CD4 test also includes the time for HIV testing
-    etc so is longer.  Make sure this is similar to the function for the time to the first repeated
-    CD4 test.  Also note that testing is assumed to happen - people may then drop out after their
-    test - so count all tests in cumulative outputs.  
-    
-    
-    Arguments
-    ---------
-    individual* indiv
-    parameters *param
-    double t
-    individual ***cascade_events
-    long *n_cascade_events
-    long *size_cascade_events
-    individual ***hiv_pos_progression
-    long *n_hiv_pos_progression
-    long *size_hiv_pos_progression
-    cumulative_outputs_struct *cumulative_outputs
-    patch_struct *patch
-    int p
-    
-    Returns
-    -------
-    Nothing; other events are scheduled and updated.  
-    */
-    
+
     // This tells us if the cd4 test is due to PopART (is_popart=1) or not (is_popart=0). 
     int is_popart = (indiv->next_cascade_event >= NCASCADEEVENTS_NONPOPART);
     int year_idx = (int) floor(t) - param->start_time_simul;
@@ -3031,8 +3075,11 @@ void cd4_test_process(individual* indiv, parameters *param, double t, individual
 }
 
 
+/*****************************************************************************/
 /* This sets up everything when someone becomes virally suppressed on ART and determines their next 
  * cascade event. */
+/*****************************************************************************/
+
 void virally_suppressed_process(individual* indiv, parameters *param, double t, individual ***cascade_events, long *n_cascade_events, long *size_cascade_events,individual ***hiv_pos_progression, long *n_hiv_pos_progression, long *size_hiv_pos_progression){
 
     /* Only need to remove HIV progression event if becoming VS after being VU (those who go from early ART to VS are
@@ -3049,8 +3096,6 @@ void virally_suppressed_process(individual* indiv, parameters *param, double t, 
 
     /* This tells us if the cd4 test is due to PopART (is_popart=1) or not (is_popart=0). */
     int is_popart = (indiv->next_cascade_event>=NCASCADEEVENTS_NONPOPART);
-
-    //printf("virally_suppressed_process is_popart= %i\n",is_popart);
 
     indiv->ART_status = LTART_VS;
 
@@ -3128,8 +3173,6 @@ void virally_unsuppressed_process(individual* indiv, parameters *param, double t
     /* This tells us if the cd4 test is due to PopART (is_popart=1) or not (is_popart=0). */
     int is_popart = (indiv->next_cascade_event>=NCASCADEEVENTS_NONPOPART);
 
-    //printf("virally_unsuppressed_process is_popart= %i\n",is_popart);
-
     indiv->ART_status = LTART_VU;
     indiv->t_vu = t;
 
@@ -3185,33 +3228,36 @@ void virally_unsuppressed_process(individual* indiv, parameters *param, double t
     }
 }
 
+/*****************************************************************************/
+// Function: dropout_process()
+/* Process events when someone drops out of care (including restarting their CD4
+progression if needed) and determining their next cascade event. 
+
+Arguments
+---------
+indiv : pointer to an individual structure
+param : pointer to a parameter structure
+t : double
+    Time out in question
+cascade_events : pointer (x3) to an individual (pointer to a multi-dimensional array of indivs)
+n_cascade_events : pointer to a long
+size_cascade_events : pointer to a long
+hiv_pos_progression : pointer (x3) to an individual structure
+cumulative_outputs : pointer to a cumulative_outputs_struct
+    Structure that records cumultive numbers of events in the simulation. Dropout events need to
+    be counted (used within next_hiv_event())
+
+Returns
+-------
+Nothing; updates different attributes of the individual structure.  
+
+*/
+/*****************************************************************************/
 
 void dropout_process(individual* indiv, parameters *param, double t, individual ***cascade_events,
     long *n_cascade_events, long *size_cascade_events, individual ***hiv_pos_progression, 
     long *n_hiv_pos_progression, long *size_hiv_pos_progression, 
     cumulative_outputs_struct *cumulative_outputs, calendar_outputs_struct *calendar_outputs){
-    /* Process events when someone drops out of care (including restarting their CD4
-    progression if needed) and determining their next cascade event. 
-    
-    Arguments
-    ---------
-    indiv : pointer to an individual structure
-    param : pointer to a parameter structure
-    t : double
-        Time out in question
-    cascade_events : pointer (x3) to an individual (pointer to a multi-dimensional array of indivs)
-    n_cascade_events : pointer to a long
-    size_cascade_events : pointer to a long
-    hiv_pos_progression : pointer (x3) to an individual structure
-    cumulative_outputs : pointer to a cumulative_outputs_struct
-        Structure that records cumultive numbers of events in the simulation. Dropout events need to
-        be counted (used within next_hiv_event())
-    
-    Returns
-    -------
-    Nothing; updates different attributes of the individual structure.  
-    
-    */
     
     /* This tells us if the person dropped out during PopART (is_popart=1) or not (is_popart=0). */
     //int is_popart = (indiv->next_cascade_event>=NCASCADEEVENTS_NONPOPART);
@@ -3278,16 +3324,19 @@ void dropout_process(individual* indiv, parameters *param, double t, individual 
 }
 
 
+/*****************************************************************************/
+// Function: carry_out_cascade_events_per_timestep()
 /* Go through the list of scheduled cascade events for this timestep (stored in hiv_pos_progression). 
- * For each person to whom some HIV event happens, draw their next HIV-based event (via next_hiv_event) unless they die from AIDS at this timestep.
- * */
+* For each person to whom some HIV event happens, draw their next HIV-based event (via next_hiv_event) unless they die from AIDS at this timestep.
+* */
+/*****************************************************************************/
+
 void carry_out_cascade_events_per_timestep(double t, patch_struct *patch, int p, all_partnerships *overall_partnerships, debug_struct *debug, file_struct *file_data_store){
 
     int array_index_for_cascade_event = (int) (round((t - patch[p].param->COUNTRY_HIV_TEST_START) * N_TIME_STEP_PER_YEAR));
     int n_events = patch[p].n_cascade_events[array_index_for_cascade_event];
     individual *indiv;
     int n;
-    //printf("Calling carry_out_cascade_events at time t=%f\n",t);
     for (n=0; n<n_events; n++){
         indiv = patch[p].cascade_events[array_index_for_cascade_event][n];
 
@@ -3318,7 +3367,6 @@ void carry_out_cascade_events_per_timestep(double t, patch_struct *patch, int p,
             exit(1);
         }
 
-
         /* Decide if we kill this person: */
 
         if ((indiv->next_cascade_event==CASCADEEVENT_ARTDEATH_NONPOPART)||(indiv->next_cascade_event==CASCADEEVENT_ARTDEATH_POPART)){
@@ -3337,7 +3385,6 @@ void carry_out_cascade_events_per_timestep(double t, patch_struct *patch, int p,
             /* At this point "indiv->next_cascade_event" is what happens to them now. We then draw a new "next event" after. */
             if((indiv->next_cascade_event==CASCADEEVENT_HIV_TEST_NONPOPART)||(indiv->next_cascade_event==CASCADEEVENT_HIV_TEST_POPART)){
                 /* Counters get modified in the function hiv_test_process. */
-                //debug->art_vars[p].cascade_transitions[indiv->ART_status+1][ARTNEG+1]++;
                 if (indiv->ART_status==ARTNAIVE)
                     printf("Individual %li transitioning illegally in patch %i\n.",indiv->id,p);
                 /* Get their HIV test results and schedule the next cascade event accordingly. Note
@@ -3374,7 +3421,6 @@ void carry_out_cascade_events_per_timestep(double t, patch_struct *patch, int p,
                 indiv->DEBUG_time_of_last_cascade_event = t;
                 virally_unsuppressed_process(indiv,patch[p].param,t, patch[p].cascade_events, patch[p].n_cascade_events, patch[p].size_cascade_events, patch[p].hiv_pos_progression, patch[p].n_hiv_pos_progression, patch[p].size_hiv_pos_progression, patch[p].cumulative_outputs, patch[p].calendar_outputs);
             }
-            //get_virally_unsuppressed(indiv,param,t, cascade_events, n_cascade_events, size_cascade_events);
             else if ((indiv->next_cascade_event==CASCADEEVENT_DROPOUT_NONPOPART)||(indiv->next_cascade_event==CASCADEEVENT_DROPOUT_POPART)){
                 debug->art_vars[p].cascade_transitions[indiv->ART_status+1][ARTDROPOUT+1]++;
                 if (indiv->ART_status==LTART_VS)
@@ -3397,15 +3443,10 @@ void carry_out_cascade_events_per_timestep(double t, patch_struct *patch, int p,
 
 }
 
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// Functions for PANGEA:
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*****************************************************************************/
+// Function: PANGEA_get_cd4()
+// Functions for PANGEA
+/*****************************************************************************/
 
 double PANGEA_get_cd4(individual* indiv, double t){
     if ((indiv->PANGEA_t_prev_cd4stage<0) || (indiv->PANGEA_t_next_cd4stage<0) || (indiv->HIV_status==UNINFECTED)){
@@ -3414,8 +3455,6 @@ double PANGEA_get_cd4(individual* indiv, double t){
         fflush(stdout);
         exit(1);
     }
-
-
     double currentcd4,cd4start,cd4end;
 
     /* Get cd4 range for current stage of CD4: */
@@ -3447,7 +3486,6 @@ double PANGEA_get_cd4(individual* indiv, double t){
         double f = (t - indiv->PANGEA_t_prev_cd4stage) / (indiv->PANGEA_t_next_cd4stage - indiv->PANGEA_t_prev_cd4stage);
 
         currentcd4 = cd4start - (cd4start-cd4end) * f;
-        //printf("cd4start=%f cd4end=%f f=%f currentcd4=%f t=%f %f %f\n",cd4start,cd4end,f,currentcd4,t,indiv->PANGEA_t_prev_cd4stage,indiv->PANGEA_t_next_cd4stage);
     }
     else{
         /* Assume if in acute that current CD4 is the upper end of the given CD4 compartment. */
