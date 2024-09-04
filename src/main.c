@@ -1,22 +1,8 @@
-/*  This file is part of the PopART IBM.
-
-    The PopART IBM is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    The PopART IBM is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with the PopART IBM.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-/************************************************************************/
-/******************************* Includes  ******************************/
-/************************************************************************/
+/**************************************************************************//**
+ * @file main.c
+ * @brief Main function of the individual-based model of the 
+ * HPTN 071 (PopART) trial.
+*****************************************************************************/
 
 #include "constants.h"
 #include "structures.h"
@@ -32,36 +18,31 @@
 #include "debug.h"
 #include "simul.h"
 
-/************************************************************************/
-/******************************* main function **************************/
-/*
-Arguments
----------
-argc: int
-    Number of arguments fed in the command line
-argv: char array
-    Pointer to an array containing the arguments fed in the command line.  Currently the command
-    line argument are the follwing:
-    <inputdir> <nruns> <counterfactual> <i_startrun> <outputdir> <seed_offset> <PC_seed_offset>
-    
-    inputdir : str
-        Directory where input parameter files ("param_processed*.csv") are located
-    nruns : int
-        Number of simulation runs in param files (num. of lines in parameter files to read in)
-    counterfactual : int
-        Should a counterfactual be run?  1 for yes, 0 for no
-    i_startrun : int
-        Simulation number from which to start from.  
-    n_startrun : int
-        Number of simulations to run (starting from i_startrun).  
-    outputdir : str
-        Directory where output files are stored (defaults to `inputdir`/Output/)
-    seed_offset : int
-        Offset to be used for the integer used to seed the GSL random number generator.  
-    PC_seed_offset
-        Offset to be used for the integer used to seed the PC sampling process.  
-*/
-/************************************************************************/
+/**************************************************************************//**
+ * @brief Main function of the individual-based model of the 
+ * HPTN 071 (PopART) trial.
+ * @details The command-line argument are the following:
+    `inputdir nruns counterfactual i_startrun outputdir`
+        `seed_offset PC_seed_offset`
+ * 
+ * @param argc Number of arguments provided in the command line
+ * @param argv Pointer to an array containing the arguments fed in the
+ *  command-line, outlined below:
+ * @param inputdir Directory of input parameter files (`param_processed*.csv`)
+ * @param nruns Number of simulation runs in parameter files (i.e. number of lines
+ *  in parameter files to read in)
+ * @param counterfactual Should a counterfactual be run?  1 for yes, 0 for no
+ * @param i_startrun Simulation number from which to start from
+ * @param n_startrun Number of simulations to run (starting from i_startrun)
+ * @param outputdir Directory where output files are stored 
+ *  (defaults to `<inputdir>/Output/`)
+ * @param seed_offset Offset to be used for the integer used to seed the 
+ *  GSL random number generator.
+ * @param PC_seed_offset Offset to be used for the integer used to seed 
+ * the PC sampling process.
+ * 
+ * @return 0 if the program runs successfully, 1 if there is an error
+ *****************************************************************************/
 
 int main(int argc,char *argv[]){
     
