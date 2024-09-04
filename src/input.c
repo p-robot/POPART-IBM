@@ -1,74 +1,29 @@
-/*  This file is part of the PopART IBM.
-
-    The PopART IBM is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    The PopART IBM is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with the PopART IBM.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-/************************************************************************/
-/******************************* Includes  ******************************/
-/************************************************************************/
+/**************************************************************************//**
+ * @file input.c
+ * @brief Functions for reading data and parameters
+ * @details These functions read data and parameters from file and populate
+ * relevant structures in the IBM.
+*****************************************************************************/
 
 #include "input.h"
 #include "constants.h"
 #include "utilities.h"
 
-/************************************************************************/
-/******************************** functions *****************************/
-/************************************************************************/
-
-/* These are the functions in this file:
-read_param()
-    Calls each of the individual read_params() functions (below)
-read_demographic_params()
-    Read in demographic parameters from param_processed_patch$p_demographics.csv
-read_hiv_params()
-    Read in hiv-related (transmission, progression) parameters from param_processed_patch$p_HIV.csv
-read_partnership_params()
-    Read in partnership parameters from param_processed_patch$p_partnerships.csv
-read_time_params()
-    Read in time-related parameters (start of epidemic, start of ART etc) from
-    param_processed_patch$p_times.csv
-read_cascade_params()
-    Read in HIV cascade-related parameters from param_processed_patch$p_cascade.csv
-read_initial_params()
-    Read in initial conditions (population size, etc) from param_processed_patch1_init.csv
-
-We also currently keep the old seed for comparison
-get_python_seed()
-    Read in the seed used by python to generate the LHC
- */
-
+/**************************************************************************//**
+ * @brief Call all other functions that read in parameters from file
+ * 
+ * @param file_directory Name of dir where parameter files 
+ *   ("param_processed*.csv") are stored.
+ * @param param Pointer to a parameters struct, in which to store parameter 
+ *   values for each simulation run.
+ * @param n_runs Number of runs of the simulation to be performed
+ * @param patch The (mainly empty) @ref patch_struct structure
+ * 
+ * @return Nothing, other functions for reading parameters are called and 
+ * different structures are populated.
+ *****************************************************************************/
 
 void read_param(char *file_directory, parameters **param, int n_runs, patch_struct *patch){
-    /* Call all other functions that read in parameters/data from file
-    
-    
-    Arguments
-    ---------
-    file_directory : char
-        Name of dir where parameter files ("param_processed*.csv") are stored.
-    param : pointer to parameters struct
-        Pointer to parameters structure in which to store parameter values for each simulation run.
-    n_runs : int
-        Number of runs of the simulation to be performed
-    patch : patch_struct
-        The (mainly empty) patch structure
-    
-    Returns
-    -------
-    Nothing; other functions for reading parameters are called and different structures are
-    populated.  
-    */
     int p;
     char patch_tag[LONGSTRINGLENGTH];
     char patch_number[10];
@@ -108,28 +63,27 @@ void read_param(char *file_directory, parameters **param, int n_runs, patch_stru
 }
 
 
+/**************************************************************************//**
+ * @brief Read in the community id and the arm for each patch
+ * 
+ * @details
+ * This function reads the file `param_processed_patchinfo.txt` within the 
+ * folder `file_directory` and saved the community ID and trial arm within 
+ * that file to the attributes `community_id` and and `trial_arm` of the 
+ * patch structure.
+ * 
+ * Note that trial_arm can be overwritten later on if we are in a counterfactual 
+ * scenario (`is_counterfactual = 1`).
+ * 
+ * @param file_directory Name of directory where parameter files 
+ *  (`param_processed*.csv`) are stored.
+ * @param patch The patch structure (a @ref patch_struct)
+ * 
+ * @return Nothing, values are read from file and stored within attributes 
+ *  of the patch structure.
+ *****************************************************************************/
+
 void read_patch_info(char *file_directory, patch_struct *patch){
-    /* Read in the community id and the arm for each patch
-    
-    This function reads the file `param_processed_patchinfo.txt` within the folder `file_directory`
-    and saved the community ID and trial arm within that file to the attributes `community_id` and 
-    and `trial_arm` of the patch structure.  
-    
-    Note that trial_arm can be overwritten later on if we are in a counterfactual 
-    scenario (is_counterfactual = 1).
-    
-    Arguments
-    ---------
-    file_directory : char
-        Name of dir where parameter files ("param_processed*.csv") are stored.
-    patch : patch_struct
-        The patch structure
-    
-    Returns
-    -------
-    Nothing; values are read from file and stored within attributes of the patch structure.  
-    */
-    
     FILE *patchinfo_file;
     char patchinfo_file_name[LONGSTRINGLENGTH];
     int p, checkreadok;
@@ -167,47 +121,52 @@ void read_patch_info(char *file_directory, patch_struct *patch){
         (patch + p)->trial_arm = (int) floor(temp_int);
         check_if_cannot_read_param(checkreadok, "param_local->trial_arm");
     }
-    /******************* closing patch info file ********************/
+    // Close patch info file
     fclose(patchinfo_file);
     return;
 }
 
 
+/**************************************************************************//**
+ * @brief Read parameters related to demographics; copy mortality and 
+ * fertility parameters across to all simulation runs.
+ * 
+ * @details
+ * Values from the file param_processed_demographics.csv are read into the 
+ * IBM and stored in the allrunparameters structure (an array of 
+ * @ref parameters structures, one for each run).  Demographic parameters 
+ * may be different across the different simulation runs.  Fertility and 
+ * mortality parameters are assumed to be the same across simulation runs 
+ * so these parameters are read into the first element of the allrunparameters
+ * array (an array of @ref parameters structs) and then copied across to 
+ * all other array elements.
+ * 
+ * The fertility and mortality parameters refer to several macros that are
+ * defined within @ref constants.h.  These are:\n
+ * `N_UNPD_TIMEPOINTS`\n
+ *     the number of time periods for which fertility data is given by 
+ *      the UNPD (30)
+ * `N_AGE_UNPD_FERTILITY`\n
+ *     the number of age groups in which fertility data is specified by 
+ *      the UNPD (7)
+ * `N_AGE_UNPD_MORTALITY`\n
+ *     the number of age groups in which mortality data is specified by 
+ *      the UNPD (17)
+ * 
+ * @param patch_tag pointer to directory and file prefix for 
+ *  patch-specific file.  For instance, this will be:\n
+ * `./data/SAMPLED_PARAMETERS/PARAMS_COMMUNITY5/param_processed_patch1_`\n
+ * and is concatenated with `demographics.csv` or `fertility.csv` to 
+ * create the full filenames.
+ * 
+ * @param allrunparameters pointer to an array of @ref parameters structures, 
+ * one for each simulation run (`n_runs`)
+ * @param n_runs Number of runs in the simulation
+ * 
+ * @return Nothing, values are read in and saved to the parameters structure.
+ *****************************************************************************/
+
 void read_demographic_params(char *patch_tag, parameters *allrunparameters, int n_runs){
-    /* Read parameters related to demographics; copy mortality and fertility parameters across
-    to all simulation runs.  
-    
-    Values from the file param_processed_demographics.csv are read into the IBM and stored in the 
-    allrunparameters structure (an array of parameter structures, one for each run).  Demographic 
-    parameters may be different across the different simulation runs.  Fertility and mortality pars
-    are assumed to be the same across simulation runs so these parameters are read into the first
-    element of the allrunparameters array and then copied across to all other array elements.  
-    
-    The fertility and mortality parameters refer to several macros that are defined within 
-    constants.h.  These are:
-    N_UNPD_TIMEPOINTS
-        the number of time periods for which fertility data is given by the UNPD (30)
-    N_AGE_UNPD_FERTILITY
-        the number of age groups in which fertility data is specified by the UNPD (7)
-    N_AGE_UNPD_MORTALITY
-        the number of age groups in which mortality data is specified by the UNPD (17)
-    
-    Arguments
-    ---------
-    patch_tag : pointer to a char
-        Directory and file prefix for patch-specific file.  For instance, this will be:
-        "./data/SAMPLED_PARAMETERS/PARAMS_COMMUNITY5/param_processed_patch1_" and is concatenated
-        with "demographics.csv" or "fertility.csv" to create the full filenames.  
-    allrunparameters : pointer to a parameters structure
-        Array of 'parameters' structures, one for each simulation run (n_runs)
-    n_runs : int
-        Number of runs in the simulation
-    
-    Returns
-    -------
-    Nothing; values are read in and saved to the parameters structure.  
-    
-    */
     FILE * param_file;
     char param_file_name[LONGSTRINGLENGTH];
     int i_run, a_unpd, g, y;
@@ -216,9 +175,7 @@ void read_demographic_params(char *patch_tag, parameters *allrunparameters, int 
     // (or equivalently &allparameters[i_run]). 
     parameters *param_local;
 
-    /********************************************************************/
-    /****  Read in demographic data (apart from mortality/fertility) ****/
-    /********************************************************************/
+    //  Read in demographic data (apart from mortality/fertility)
     // Add path before file name.
     
     strncpy(param_file_name, patch_tag, LONGSTRINGLENGTH);
@@ -247,9 +204,7 @@ void read_demographic_params(char *patch_tag, parameters *allrunparameters, int 
     }
     fclose(param_file);     // Closing demographics parameter file
     
-    /*********************************************************/
-    /*******************  Mortality data  ********************/
-    /*********************************************************/
+    //  Mortality data
     // Add path before file name.
     strncpy(param_file_name, patch_tag, LONGSTRINGLENGTH);
     strcat(param_file_name, "mortality.csv");
@@ -303,10 +258,7 @@ void read_demographic_params(char *patch_tag, parameters *allrunparameters, int 
         }
     }
 
-    /*********************************************************/
-    /*******************  Fertility data  ********************/
-    /*********************************************************/
-    
+    // Fertility data
     // Add path before file name
     strncpy(param_file_name, patch_tag, LONGSTRINGLENGTH);
     strcat(param_file_name, "fertility.csv");
@@ -353,28 +305,26 @@ void read_demographic_params(char *patch_tag, parameters *allrunparameters, int 
 }
 
 
+/**************************************************************************//**
+ * @brief Read parameters related to HIV
+ * 
+ * @details
+ * This function also does some small error checking.
+ * 
+ * For a given true CD4, p_misclassify_cd4[j] stores the probability that 
+ * the measured cd4 cat is j.  Note that icd4 is the true cd4, and the other
+ * index is the measured cd4.
+ * 
+ * @param patch_tag Pointer to a character array for denoting the patch
+ * @param allrunparameters pointer to an array of 'parameters' structures, 
+one for each simulation run (n_runs)
+ * @param n_runs Number of runs of the simulation
+ * @param p Patch number
+ * 
+ * @return Nothing
+ *****************************************************************************/
+
 void read_hiv_params(char *patch_tag, parameters *allrunparameters, int n_runs, int p){
-    /* Read parameters related to HIV
-    
-    
-    Does some small error checking.  
-    
-    
-    For a given true CD4, p_misclassify_cd4[j] stores the probability that the
-    measured cd4 cat is j.  Note that icd4 is the true cd4, and the other index is the measured cd4.
-    
-    
-    Arguments
-    ---------
-    char *patch_tag, parameters *allrunparameters, int n_runs, int p
-    
-    Returns
-    -------
-    Nothing; 
-    
-    */
-    
-    
     FILE * param_file;
     char param_file_name[LONGSTRINGLENGTH];
     int spvl, icd4, checkreadok, i_run;
@@ -580,30 +530,23 @@ void read_hiv_params(char *patch_tag, parameters *allrunparameters, int n_runs, 
 }
 
 
+/**************************************************************************//**
+ * @brief Read partnership related parameters
+ * 
+ * @details
+ * The parameters p_age_per_gender are not directly read in the input files
+ * what is read is p1, p2/(1-p1), p3/(1-p1-p2), etc...
+ * this avoids having constraints on these probabilities summing to 1.
+ * 
+ * @param patch_tag pointer to a character array
+ * @param allrunparameters pointer to an array of parameters structure 
+ *     for storing all parameter values
+ * @param n_runs Number of runs in the simulation
+ * 
+ * @return Nothing
+ *****************************************************************************/
+
 void read_partnership_params(char *patch_tag, parameters *allrunparameters, int n_runs){
-    /* Read partnership related parameters
-    
-    
-    The parameters p_age_per_gender are not directly read in the input files
-    what is read is p1, p2/(1-p1), p3/(1-p1-p2), etc...
-    this avoids having constraints on these probabilities summing to 1.
-    
-    
-    Arguments
-    ---------
-    patch_tag : pointer to a character array
-    
-    allrunparameters : pointer to an array of parameters structures
-        Structure for storing all parameter values
-    n_runs : int
-        Number of runs in the simulation
-    
-    Returns
-    -------
-    Nothing; 
-    
-    */
-    
     FILE * param_file;
     int g, ag, r, bg, i_run;
     char param_file_name[LONGSTRINGLENGTH];
@@ -721,8 +664,6 @@ void read_partnership_params(char *patch_tag, parameters *allrunparameters, int 
                     //printf("%lg\t",param_local->p_age_per_gender[g][ag][bg]);
                     check_sum += param_local->p_age_per_gender[g][ag][bg];
                 }
-                //printf("\n");
-                //fflush(stdout);
                 
                 if(fabs(check_sum - 1.0) > 1e-12){
                     printf("In input.c the sum of param_local->p_age_per_gender[g][ag][bg] ");
@@ -734,16 +675,10 @@ void read_partnership_params(char *patch_tag, parameters *allrunparameters, int 
             }
         }
 
-        //printf("------- UPON READING PARAM_PARTNERSHIPS -------\n");
-        //fflush(stdout);
-
         for(r = 0; r < N_RISK; r++){
             checkreadok = fscanf(param_file, "%lf", &(temp_int));
             param_local->max_n_part_noage[r] = (int) floor(temp_int);
             check_if_cannot_read_param(checkreadok, "param_local->max_n_part_noage");
-            
-            //printf("param_local->max_n_part_noage in risk group %d is %d\n",r,param_local->max_n_part_noage[r]);
-            //fflush(stdout);
         }
 
         for(r = 0; r < N_RISK; r++){
@@ -751,9 +686,6 @@ void read_partnership_params(char *patch_tag, parameters *allrunparameters, int 
                 &(param_local->breakup_scale_lambda_within_patch[r]));
             check_if_cannot_read_param(checkreadok,
                 "param_local->breakup_scale_lambda_within_patch");
-            
-            //printf("param_local->breakup_scale_lambda_within_patch in risk group %d is %lg\n",r,param_local->breakup_scale_lambda_within_patch[r]);
-            //fflush(stdout);
         }
         for(r = 0; r < N_RISK; r++){
             checkreadok = fscanf(param_file, "%lg", &(param_local->breakup_shape_k[r]));
@@ -775,51 +707,25 @@ void read_partnership_params(char *patch_tag, parameters *allrunparameters, int 
                 param_local->breakup_scale_lambda_within_patch[r] *
                 breakup_scale_multiplier_between_vs_within_patch;
         }
-
-        /*printf("------- AFTER READING PARAM_PARTNERSHIPS AND DOING SOME CALCULATION -------\n");
-        fflush(stdout);
-
-        for(r=0 ; r<N_RISK ; r++)
-        {
-            printf("param_local->max_n_part_noage in risk group %d is %d\n",r,param_local->max_n_part_noage[r]);
-            fflush(stdout);
-        }
-
-        for(r=0; r<N_RISK; r++){
-            printf("param_local->breakup_scale_lambda_within_patch in risk group %d is %lg\n",r,param_local->breakup_scale_lambda_within_patch[r]);
-            fflush(stdout);
-        }
-        for(r=0; r<N_RISK; r++){
-            printf("param_local->breakup_shape_k in risk group %d is %lg\n",r,param_local->breakup_shape_k[r]);
-            fflush(stdout);
-        }
-        printf("breakup_scale_multiplier_overall is %lg\n",breakup_scale_multiplier_overall);
-        printf("breakup_scale_multiplier_between_vs_within_patch is %lg\n",breakup_scale_multiplier_between_vs_within_patch);
-        fflush(stdout);
-
-        printf("------- FINISH --- CHECK THIS IS OK! -------\n");
-        fflush(stdout);*/
-
     } // end for i_run
-    
     // Close parameter file
     fclose(param_file);
     return;
 }
 
 
+/**************************************************************************//**
+ * @brief Read time related parameters
+ * 
+ * @param patch_tag Pointer to a character array of the patch tag
+ * @param allrunparameters Pointer to an array of @ref parameters structure for storing all parameter values
+ * @param n_runs Number of simulation runs
+ * @param p Patch number
+ * 
+ * @return Nothing; the argument allrunparameters structure is populated (a @ref parameters structure)
+ *****************************************************************************/
+
 void read_time_params(char *patch_tag, parameters *allrunparameters, int n_runs, int p){
-    /* Read time related parameters
-    
-    Arguments
-    ---------
-    char *patch_tag, parameters *allrunparameters, int n_runs, int p
-    
-    Returns
-    -------
-    Nothing; the allrunparameters structure is populated
-    */
-    
     FILE * param_file;
     char param_file_name[LONGSTRINGLENGTH];
     int i_run, i;
@@ -1003,9 +909,14 @@ void read_time_params(char *patch_tag, parameters *allrunparameters, int n_runs,
 }
 
 
-/************************************************************************************/
-/*******************     Cascade parameters - except CHiPs visit rates***************/
-/************************************************************************************/
+/**************************************************************************//**
+ * @brief Read cascade parameters, except CHiPs visit rates
+ * 
+ * @param patch_tag Pointer to a character array of the patch tag
+ * @param allrunparameters Pointer to an array of @ref parameters structure for storing all parameter values
+ * @param n_runs Number of simulation runs
+ *****************************************************************************/
+
 void read_cascade_params(char *patch_tag, parameters *allrunparameters, int n_runs){
     FILE *param_file;
     int icd4, iround;
@@ -1019,15 +930,13 @@ void read_cascade_params(char *patch_tag, parameters *allrunparameters, int n_ru
     strncpy(param_file_name,patch_tag,LONGSTRINGLENGTH);
     strcat(param_file_name, "cascade.csv");
 
-    /******************* opening parameter file ********************/
-    if ((param_file=fopen(param_file_name,"r"))==NULL)
-    {
+    // Open parameter file
+    if ((param_file=fopen(param_file_name,"r"))==NULL){
         printf("Cannot open %s\n",param_file_name);
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
-    }else
-    {
+    }else{
         if(VERBOSE_OUTPUT==1)
             printf("Cascade parameters read from: %s:\n",param_file_name);
     }
@@ -1040,8 +949,7 @@ void read_cascade_params(char *patch_tag, parameters *allrunparameters, int n_ru
      *  prior format spec). */
     fscanf(param_file, "%*[^\n]\n");
 
-
-    /******************* read parameters from each line i_run ********************/
+    // Read parameters from each line i_run
     for (i_run = 0; i_run<n_runs; i_run++){
         param_local = allrunparameters + i_run;
 
@@ -1073,8 +981,6 @@ void read_cascade_params(char *patch_tag, parameters *allrunparameters, int n_ru
 
         checkreadok = fscanf(param_file,"%lg",&(param_local->HIV_rapid_test_sensitivity_CHIPS));
         check_if_cannot_read_param(checkreadok,"param_local->HIV_rapid_test_sensitivity_CHIPS");
-        //printf("HIV rapid test sensitivity = %6.4lf\n",param_local->HIV_rapid_test_sensitivity_CHIPS);
-
 
         /* Input probabilities for the cascade events: */
         checkreadok = fscanf(param_file,"%lg",&(param_local->p_collect_hiv_test_results_cd4_over200));
@@ -1093,15 +999,6 @@ void read_cascade_params(char *patch_tag, parameters *allrunparameters, int n_ru
         checkreadok = fscanf(param_file,"%lg",&(param_local->p_collect_cd4_test_results_cd4_popartYEAR2onwards));
         check_if_cannot_read_param(checkreadok,"param_local->p_collect_cd4_test_results_cd4_popartYEAR2onwards");
         //printf("param_local->p_collect_cd4_test_results_cd4_popartYEAR2onwards = %lf\n",param_local->p_collect_cd4_test_results_cd4_popartYEAR2onwards);
-
-        //printf("param_local->p_collect_hiv_test_results_cd4_under200 = %lf\n",param_local->p_collect_hiv_test_results_cd4_under200);
-        //checkreadok = fscanf(param_file,"%lg",&(param_local->p_collect_cd4_test_results_cd4_over200));
-        //check_if_cannot_read_param(checkreadok,"param_local->p_collect_cd4_test_results_cd4_over200");
-        //printf("param_local->p_collect_cd4_test_results_cd4_over200 = %lf\n",param_local->p_collect_cd4_test_results_cd4_over200);
-
-        //checkreadok = fscanf(param_file,"%lg",&(param_local->p_collect_cd4_test_results_cd4_under200));
-        //check_if_cannot_read_param(checkreadok,"param_local->p_collect_cd4_test_results_cd4_under200");
-        //printf("param_local->p_collect_cd4_test_results_cd4_under200 = %lf\n",param_local->p_collect_cd4_test_results_cd4_under200);
 
         for (icd4=0; icd4<NCD4; icd4++){
             checkreadok = fscanf(param_file,"%lg",&(param_local->p_dies_earlyart_cd4[icd4]));
@@ -1337,50 +1234,35 @@ void read_cascade_params(char *patch_tag, parameters *allrunparameters, int n_ru
         checkreadok = fscanf(param_file,"%lg",&(param_local->t_vmmc_healing));
         check_if_cannot_read_param(checkreadok,"param_local->t_vmmc_healing");
 
-        //      for (i=0; i<NCHIPSROUNDS; i++){
-        //          checkreadok = fscanf(param_file,"%lg",&(param_local->prop_tested_by_chips[MALE][i]));
-        //          check_if_cannot_read_param(checkreadok,"param_local->prop_tested_by_chips");
-        //      }
-        //      for (i=0; i<NCHIPSROUNDS; i++){
-        //          checkreadok = fscanf(param_file,"%lg",&(param_local->prop_tested_by_chips[FEMALE][i]));
-        //          check_if_cannot_read_param(checkreadok,"param_local->prop_tested_by_chips");
-        //      }
     }
-    /******************* closing parameter file ********************/
+    // Close parameter file
     fclose(param_file);
     return;
 }
 
 
+/**************************************************************************//**
+ * @brief This function loops through CHiPs rounds and reads CHiPs uptake data
+ * 
+ * @details
+ * This function populates the following arrays in the @ref parameters structure:\n
+ *     `parameters.chips_params.prop_tested_by_chips_in_round` \n
+ *     `parameters->chips_params->n_timesteps_per_round[NCHIPSROUNDS]`
+ * 
+ * And similarly the post-trial round equivalents of these arrays:\n
+ *     `parameters->chips_params->prop_tested_by_chips_in_round_posttrial[][][]`\n
+ *     `parameters->chips_params->n_timesteps_per_round_posttrial[NCHIPSROUNDS]`
+ * 
+ * The values saved within the `n_timesteps_per_round_posttrial` arrays are imported in the 
+ * @ref read_time_params() function.
+ * 
+ * @param patch_tag Pointer to a char of the patch tag
+ * @param allrunparameters pointer to an array of @ref parameters structs
+ * 
+ * @return Nothing, this function populates `parameters->chips_params->prop_tested_by_chips_in_round`
+ *****************************************************************************/
+
 void read_chips_uptake_params(char *patch_tag, parameters *allrunparameters){
-    /* Read in CHiPs uptake parameters
-    
-    This function loops through CHiPs rounds and reads the CHiPs uptake data from this.  It 
-    populates the following arrays
-    
-        parameters->chips_params->prop_tested_by_chips_in_round[][][]
-    
-        parameters->chips_params->n_timesteps_per_round[NCHIPSROUNDS]
-    
-    And similarly the post-trial round equivalents of these arrays:
-        
-        parameters->chips_params->prop_tested_by_chips_in_round_posttrial[][][]
-    
-        parameters->chips_params->n_timesteps_per_round_posttrial[NCHIPSROUNDS]
-    
-    The values saved within the `n_timesteps_per_round_posttrial` arrays are imported in the 
-    read_time_params() function.  
-    
-    
-    Arguments
-    ---------
-    patch_tag : pointer to a char
-    allrunparameters : pointer to an array of parameters structs
-    
-    Returns
-    -------
-    Nothing; populates parameters->chips_params->prop_tested_by_chips_in_round
-    */
     int i_run, n_steps;
     double temp_time_continuous;
     int temp_time_discrete;
@@ -1392,13 +1274,11 @@ void read_chips_uptake_params(char *patch_tag, parameters *allrunparameters){
     parameters *param_local;
     FILE *param_file;
     int checkreadok;
-    /*******************  adding path before file name ********************/
+    // Add path before file name
     char param_file_name[LONGSTRINGLENGTH];
     char temp_tag[100];
 
-    /********************************************************************/
-    /*******************  Read in CHiPs uptake data ********************/
-    /********************************************************************/
+    // Read in CHiPs uptake data
     for(chips_round = 0; chips_round <= NCHIPSROUNDS; chips_round++){
         
         // Add path before file name.
@@ -1413,7 +1293,7 @@ void read_chips_uptake_params(char *patch_tag, parameters *allrunparameters){
         }
         strcat(param_file_name, temp_tag);
         
-        /******************* opening parameter file ********************/
+        // Open parameter file
         if((param_file = fopen(param_file_name, "r")) == NULL){
             printf("Cannot open %s",param_file_name);
             printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
@@ -1423,7 +1303,7 @@ void read_chips_uptake_params(char *patch_tag, parameters *allrunparameters){
             if(VERBOSE_OUTPUT == 1)
                 printf("CHiPs uptake parameters read from: %s:\n", param_file_name);
         }
-        /******************* read parameters ********************/
+        // Read parameters
 
         /* First line offile is a header, read that line and throw it away.*/
         fscanf(param_file, "%*[^\n]\n");
@@ -1483,6 +1363,14 @@ void read_chips_uptake_params(char *patch_tag, parameters *allrunparameters){
     }
 }
 
+
+/**************************************************************************//**
+ * @brief Copy CHiPs parameters from one run to the next.
+ * 
+ * @param allrunparameters Pointer to an array of @ref parameters structure for storing all parameter values
+ * @param n_runs Number of simulation runs
+ *****************************************************************************/
+
 void copy_chips_params( parameters **allrunparameters, int n_runs){
     int i, g, ac, i_run, chips_round, p;
     /* We assume that the CHiPs parameters are fixed from one run to the next: */
@@ -1501,8 +1389,6 @@ void copy_chips_params( parameters **allrunparameters, int n_runs){
                     for(i=0; i<allrunparameters[p][0].chips_params->n_timesteps_per_round_posttrial;i++){
                         allrunparameters[p][i_run].chips_params->prop_tested_by_chips_per_timestep_posttrial[g][ac][i] = allrunparameters[p][0].chips_params->prop_tested_by_chips_per_timestep_posttrial[g][ac][i];
                     }
-
-
                 }
             }
         }
@@ -1510,7 +1396,17 @@ void copy_chips_params( parameters **allrunparameters, int n_runs){
 }
 
 
-/* Read in the PC enrolment parameters. */
+/**************************************************************************//**
+ * @brief Read in the PC enrolment parameters
+ * 
+ * @param patch_tag Pointer to a char of the patch tag
+ * @param community_id Community number
+ * @param allrunparameters Pointer to an array of @ref parameters structure 
+ *  for storing all parameter values
+ * @param n_runs Number of simulation runs
+ * @param p Patch number
+ *****************************************************************************/
+
 void read_pc0_enrolment_params(char *patch_tag, int community_id, parameters *allrunparameters, int n_runs, int p){
     int i_run;
     double temp_time_continuous;
@@ -1521,29 +1417,23 @@ void read_pc0_enrolment_params(char *patch_tag, int community_id, parameters *al
     parameters *param_local;
     FILE *param_file;
     int checkreadok;
-    /*******************  adding path before file name ********************/
+    // Add path before file name
     char param_file_name[LONGSTRINGLENGTH];
     char temp_tag[100];
     char buffer[100];
 
-
     int pc_enrolment_round = 0; /* We are reading in PC0 enrollee data only, not PC12N/24N. */
 
-    /********************************************************************/
-    /*******************  Read in PC enrolment data ********************/
-    /********************************************************************/
+    // Read in PC enrolment data
     i_run=0; /* We store the outputs in the i_run=0 parameter struct, and later copy it to every other run. */
     param_local = allrunparameters + i_run; /* No need for the i_run to be added - but just keep here for clarity. */
 
-
-
     for (pc_round=0;pc_round<NPC_ROUNDS;pc_round++){
-
         strncpy(param_file_name,patch_tag,LONGSTRINGLENGTH);   // Adding path before file name.
         sprintf(temp_tag,"PC%i_community%i.csv",pc_round,community_id);   // NOTE - we use pc_round+1 so the round files are labelled 1,2,3,4.
         strcat(param_file_name, temp_tag);
 
-        /******************* opening parameter file ********************/
+        // Open parameter file
         if ((param_file=fopen(param_file_name,"r"))==NULL){    // Opening parameter file - print error if file not found.
             printf("Cannot open %s",param_file_name);
             printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
@@ -1553,10 +1443,7 @@ void read_pc0_enrolment_params(char *patch_tag, int community_id, parameters *al
             if(VERBOSE_OUTPUT==1)
                 printf("PC enrolment parameters read from: %s:\n",param_file_name);
         }
-
-
-        /******************* read parameters ********************/
-
+        // Read parameters
 
         /* The first line of this file is a header - the text below reads in just that line and throws it away.
          * The * instructs fscanf (all of the scanf family, in fact) to parse the data out as presented in the format string,
@@ -1566,8 +1453,6 @@ void read_pc0_enrolment_params(char *patch_tag, int community_id, parameters *al
          *  prior format spec). Btw, the NULL isn't required in the argument list. */
         //fscanf(param_file, "%*[^\n]\n", NULL);
         fscanf(param_file, "%*[^\n]\n");
-
-
 
         /* Now read in the data from the given file: */
         i = 0;
@@ -1604,13 +1489,9 @@ void read_pc0_enrolment_params(char *patch_tag, int community_id, parameters *al
                             fflush(stdout);
                             exit(1);
                         }
-
-                        //printf("%d ",param_local->PC_params->number_seen_by_PC_per_timestep[g][ap][i_pc_category][i][pc_round]);
-
                     }
                 }
             }
-            //printf("\n");
             i = i+1;
         }
 
@@ -1634,15 +1515,6 @@ void read_pc0_enrolment_params(char *patch_tag, int community_id, parameters *al
             fflush(stdout);
             exit(1);
         }
-        //      int Nseen = 0;
-        //      for (i_pc_category=0; i_pc_category<N_PC_HIV_STRATA; i_pc_category++){
-        //          for (g=0; g<N_GENDER;g++)
-        //              for (ap = 0; ap<(AGE_PC_MAX-AGE_PC_MIN+1); ap++)
-        //                  Nseen += param_local->PC_params->number_seen_in_PC_round[g][ap][i_pc_category][pc_round];
-        //      }
-        //printf("Number seen in patch %s = %i\n",patch_tag,Nseen);
-        //printf("number men age 18, cat 0 = %i\n",param_local->PC_params->number_seen_in_PC_round[MALE][0][0][0]);
-
         /* Now check that there was nothing else in the file - ie there's no mismatch between the number of timesteps in the PC round we calculate and the number of lines of data we have. */
         int firsterror = 1;
         while (!feof(param_file)){
@@ -1661,12 +1533,10 @@ void read_pc0_enrolment_params(char *patch_tag, int community_id, parameters *al
             fflush(stdout);
             exit(1);
         }
-
         /* If no problems, then continue. */
         fclose(param_file);     // Closing PC uptake parameter file
         //printf("(pc_round=%i): Number of timesteps = %i . Start = %i %i. End = %i %i\n",pc_round,param_local->PC_params->n_timesteps_per_round[0], param_local->PC_params->PC_START_YEAR[0], param_local->PC_params->PC_START_TIMESTEP[0], param_local->PC_params->PC_END_YEAR[0], param_local->PC_params->PC_END_TIMESTEP[0]);
     }
-
 
     /* Set counters to zero: */
     for (g=0; g<N_GENDER;g++)
@@ -1688,7 +1558,6 @@ void read_pc0_enrolment_params(char *patch_tag, int community_id, parameters *al
             }
         }
     }
-
     /* Only need to worry about PC in patch 0: */
     if (p==0)
         printf("Cohort size = %i\n",param_local->PC_params->cohort_size);
@@ -1696,9 +1565,19 @@ void read_pc0_enrolment_params(char *patch_tag, int community_id, parameters *al
 
 }
 
+
+/**************************************************************************//**
+ * @brief Copy PC parameters from one run to the next.
+ * 
+ * @param allrunparameters Pointer to an array of @ref parameters structure
+ *  for storing all parameter values
+ * @param n_runs Number of simulations
+ * 
+ * @return Nothing
+ ****************************************************************************/
+
 void copy_pc_params( parameters **allrunparameters, int n_runs){
     int i, g, ap, i_run, i_pc_category, pc_round, p, pc_enrolment_round;
-    //printf("Running copy_pc_params\n");
     /* We assume that the PC parameters are fixed from one run to the next: */
     for (i_run = 1; i_run<n_runs; i_run++){
         for (p=0; p<NPATCHES; p++){
@@ -1734,11 +1613,18 @@ void copy_pc_params( parameters **allrunparameters, int n_runs){
             }
         }
     }
-
 }
-/* Reads in dates of PC12,24,36 and expected retention rate. */
-void read_pc_future_params(char *patch_tag, parameters *allrunparameters, int n_runs)
-{
+
+
+/**************************************************************************//**
+ * @brief Reads in dates of PC12, PC24, PC36 and expected retention rate
+ * 
+ * @param patch_tag Pointer to a char of the patch tag
+ * @param allrunparameters Pointer to an array of @ref parameters structure for storing all parameter values
+ * @param n_runs Number of simulation runs
+ *****************************************************************************/
+
+void read_pc_future_params(char *patch_tag, parameters *allrunparameters, int n_runs){
     FILE *param_file;
     int pc_round;   /* Index for PC round number. */
     //double PC_TIME; /* Temporary store of the (decimal) time when PC round starts/ends - used when we convert to discrete time. */
@@ -1747,14 +1633,14 @@ void read_pc_future_params(char *patch_tag, parameters *allrunparameters, int n_
     /* This is a local temp variable we use so we don't have to keep writing allparameters+i_run (or equivalently &allparameters[i_run]). */
     parameters *param_local;
     int checkreadok;
-    /*******************  adding path before file name ********************/
+    // Add path before file name
     char param_file_name[LONGSTRINGLENGTH];
 
     strncpy(param_file_name,patch_tag,LONGSTRINGLENGTH);
     strcat(param_file_name, "PC.csv");
 
 
-    /******************* opening parameter file ********************/
+    // Open parameter file
     if ((param_file=fopen(param_file_name,"r"))==NULL){
         printf("Cannot open %s\n",param_file_name);
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
@@ -1773,62 +1659,33 @@ void read_pc_future_params(char *patch_tag, parameters *allrunparameters, int n_
      *  prior format spec). */
     fscanf(param_file, "%*[^\n]\n");
 
-
-    /******************* read parameters from each line i_run ********************/
+    // Read parameters from each line i_run
     for (i_run = 0; i_run<n_runs; i_run++){
         param_local = allrunparameters + i_run;
-
-
-        //      /* Times run from PC12 to PC36 (round 1 to round 3). */
-        //      for(pc_round=1;pc_round<NPC_ROUNDS; pc_round++){
-        //          checkreadok = fscanf(param_file,"%lg",&PC_TIME);
-        //          check_if_cannot_read_param(checkreadok,"PC start time");
-        //          param_local->PC_params->PC_START_YEAR[pc_round] = (int) PC_TIME;
-        //          param_local->PC_params->PC_START_TIMESTEP[pc_round] = (int) ((PC_TIME - param_local->PC_params->PC_START_YEAR[pc_round])*N_TIME_STEP_PER_YEAR);
-        //
-        //          checkreadok = fscanf(param_file,"%lg",&PC_TIME);
-        //          check_if_cannot_read_param(checkreadok,"PC end time");
-        //          param_local->PC_params->PC_END_YEAR[pc_round] = (int) PC_TIME;
-        //          param_local->PC_params->PC_END_TIMESTEP[pc_round] = (int) ((PC_TIME - param_local->PC_params->PC_END_YEAR[pc_round])*N_TIME_STEP_PER_YEAR);
-        //
-        //          param_local->PC_params->n_timesteps_per_round[pc_round] = (param_local->PC_params->PC_END_YEAR[pc_round]-param_local->PC_params->PC_START_YEAR[pc_round])*N_TIME_STEP_PER_YEAR + param_local->PC_params->PC_END_TIMESTEP[pc_round] - param_local->PC_params->PC_START_TIMESTEP[pc_round];
-        //
-        //          printf("param_local->PC_params->n_timesteps_per_round[%i] = %i\n",pc_round,param_local->PC_params->n_timesteps_per_round[pc_round]);
-        //          //printf("PC start/stop times round %d = %i %i, %i %i\n",pc_round,param_local->PC_params->PC_START_YEAR[pc_round],param_local->PC_params->PC_START_TIMESTEP[pc_round],param_local->PC_params->PC_END_YEAR[pc_round],param_local->PC_params->PC_END_TIMESTEP[pc_round]);
-        //
-        //      }
 
         for(pc_round=0;pc_round<NPC_ROUNDS; pc_round++){
             checkreadok = fscanf(param_file,"%lg",&(param_local->PC_params->PC_retention[pc_round]));
             check_if_cannot_read_param(checkreadok,"param_local->PC_retention");
-
-            //printf("PC retention round %i = %lf\n",pc_round,param_local->PC_params->PC_retention[pc_round]);
         }
-
-
     }
-
     fclose(param_file);
-
     return;
 }
 
 
+/**************************************************************************//**
+ * @brief Read initial condition parameter values
+ * 
+ * @details Reads parameters related to initial conditions of the simulation
+ * which are stored in the files named `param_processed_patch$p_init.csv`
+ * @param patch_tag Pointer to name of the dir where the parameter file is stored
+ * @param allrunparameters Pointer to an array of @ref parameters structure for storing all parameter values
+ * @param n_runs Number of runs of the simulation
+ * 
+ * @return Nothing; reads in parameter values and populates a parameters struct
+ *****************************************************************************/
+
 void read_initial_params(char *patch_tag, parameters *allrunparameters, int n_runs){
-    /* Read initial condition parameter values from param_processed_patch$p_init.csv
-    
-    Parameters
-    ----------
-    file_directory: pointer to string
-        Ptr to name of the dir where the parameter file is stored
-    param: a pointer to the "parameters" struct
-        Structure where parameter values will be stored once read in from file
-    
-    Returns
-    -------
-    Nothing; reads in parameter values and populates a parameters struct
-    
-    */
     
     FILE *param_file;
 
@@ -1851,13 +1708,13 @@ void read_initial_params(char *patch_tag, parameters *allrunparameters, int n_ru
     // writing allparameters+i_run (or equivalently &allparameters[i_run]).
     parameters *param_local;
     int checkreadok;
-    /*******************  adding path before file name ********************/
+    // Add path before file name
     char param_file_name[LONGSTRINGLENGTH];
 
     strncpy(param_file_name, patch_tag, LONGSTRINGLENGTH);
     strcat(param_file_name, "init.csv");
 
-    /******************* opening parameter file ********************/
+    // Open parameter file
     if((param_file = fopen(param_file_name, "r")) == NULL){
         printf("Cannot open %s\n", param_file_name);
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
@@ -1872,7 +1729,7 @@ void read_initial_params(char *patch_tag, parameters *allrunparameters, int n_ru
     // Throw away the first line of the parameter file (the header)
     fscanf(param_file, "%*[^\n]\n");
 
-    /******************* read parameters from each line i_run ********************/
+    // Read parameters from each line i_run
     for (i_run = 0; i_run < n_runs; i_run++){
         param_local = allrunparameters + i_run;
         
@@ -1993,19 +1850,16 @@ void read_initial_params(char *patch_tag, parameters *allrunparameters, int n_ru
 }
 
 
+/**************************************************************************//**
+ * @brief Read in the seed used by python to generate a Latin Hypercube Sample
+ * 
+ * @param file_directory Name of directory where parameter file 
+ * `python_seed.txt` is stored.
+ * 
+ * @return The seed within the file `python_seed.txt`
+ *****************************************************************************/
+
 long get_python_seed(char *file_directory){
-    /* Read in the seed used by python to generate the LHC.
-    
-    Arguments
-    ---------
-    file_directory : char
-        Name of dir where parameter file `python_seed.txt` is stored.
-    
-    Returns
-    -------
-    seed : int
-        The seed within the file `python_seed.txt`.  
-    */
     long seed;
     FILE *PYTHON_SEED_FILE;
     PYTHON_SEED_FILE = fopen("", "r");
@@ -2016,7 +1870,7 @@ long get_python_seed(char *file_directory){
     add_slash(python_seed_filename);
     strcat(python_seed_filename, "python_seed.txt");
     
-    /******************* opening parameter file ********************/
+    // Open parameter file
     if((PYTHON_SEED_FILE = fopen(python_seed_filename, "r")) == NULL){
         printf("Cannot open python_seed.txt");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
@@ -2027,7 +1881,7 @@ long get_python_seed(char *file_directory){
     // Read the seed
     int checkreadok = fscanf(PYTHON_SEED_FILE, "%ld", &seed);
     
-    /******************* closing parameter file ********************/
+    // Close the parameter file
     fclose(PYTHON_SEED_FILE);
     
     if(checkreadok < 1){
