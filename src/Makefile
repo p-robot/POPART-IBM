@@ -9,6 +9,9 @@
 #	For compilation on Rescomp using the icc compiler:
 #	make clean
 #	make all location=rescomp compiler=icc
+#	
+#	For compilation of documentation using Doxygen:
+#	make docs
 
 
 # Executing instructions:
@@ -54,4 +57,9 @@ clean:
 	rm -f $(OBJS) $(EXE)
 
 .c.o:
-	${C} ${CFLAGS} -c $< -o $@	
+	${C} ${CFLAGS} -c $< -o $@
+
+# Generation of docs using doxygen
+docs:
+	doxygen
+
