@@ -1,34 +1,7 @@
-/*  This file is part of the PopART IBM.
-
-    The PopART IBM is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    The PopART IBM is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with the PopART IBM.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-/*****************************************************************************/
-/* Contains all functions which initialize the population for the PopART model:
- * get_initial_population_distribution() - calculates the % of individuals in each age x risk group for each gender based 
- * initialize_child_population() - sets up the number of children (by timestep) at the start of the simulation - this will give the number of new adults at each timestep.
- * make_DoB() - gives an individual a DoB at the start of the simulation based on assuming that age is uniformly distributed in each age group and drawing a random number.
- * set_max_n_partners() - gives an individual a maximum number of partners at any given time.
- * set_population_count_zero() - initializes all the population counts in the "population" structure to be zero.
- * set_population_count_one_year_zero() - initializes all elements of a population_size_one_year_age struct to be zero. These are counts of prevalent and incident cases.
- * set_population_count_stratified_zero() - initializes n_population_stratified struct to be zero.
- * set_population_count_stratified() - based on the maximally stratified (ie gender/age/risk) population counts, generates other (less stratified e.g. by gender only) population counts needed by certain functions.
- * set_up_population() - sets up the "individual_population" - this is an array of param->initial_population_size "individual" structures - at the start of the simulation
- * init_available_partnerships() - sets up the available partnership lists.
- * init_cumulative_counters() - sets the cumulative counter variables in the struct cumulative_outputs to zero. This is called at the start of the simulation. 
- */
-/*****************************************************************************/
+/**************************************************************************//**
+ * @file init.c
+ * @brief Functions which initialize the population for the PopART model
+*****************************************************************************/
 
 #include "constants.h"
 #include "init.h"
@@ -37,11 +10,20 @@
 #include "debug.h"
 
 
-/*****************************************************************************/
-// Function: get_initial_population_distribution()
-/* Function does: calculates the proportion of population in each risk group (gender x age x risk) at the start of 
- * the simulation from the initial values in the params_init.txt file and stores it in n_population[][][]. */
-/*****************************************************************************/
+/**************************************************************************//**
+ * @brief This function calculates the proportion of the population in each
+ *  risk group (gender x age x risk) at the start of the simulation
+ * 
+ * @details This function uses the initial values in the `params_init.txt`
+ * file to calculate the proportion of the population in each risk group,
+ * disaggregated by gender, age, and risk group, at the start of the 
+ * simulation.  The function populates these in @ref population_size struct
+ * 
+ * @param n_population Pointer to the @ref population_size struct
+ * @param param Pointer to the @ref parameters struct
+ * 
+ * @return void, changes the objects in place
+*****************************************************************************/
 
 void get_initial_population_distribution(population_size *n_population, parameters *param){
     int r, ag;   /* Counters over risk group, age. */
@@ -53,13 +35,15 @@ void get_initial_population_distribution(population_size *n_population, paramete
 }
 
 
-/*****************************************************************************/
-// Function: get_initial_population_distribution_of_exact_init_size()
-/* 
-Function to generate initial population distribution that is limited to be the
-same size as the specified initial population size.
-*/
-/*****************************************************************************/
+/**************************************************************************//**
+ * @brief Function to generate initial population distribution that is limited to be the
+ * same size as the specified initial population size.
+ * 
+ * @param n_population Pointer to the @ref population_size struct
+ * @param param Pointer to the @ref parameters struct
+ * 
+ * @return Nothing, changes the objects in place
+*****************************************************************************/
 
 void get_initial_population_distribution_of_exact_init_size(population_size *n_population, parameters *param){
     int r, ag;   /* Counters over risk group, age. */
@@ -105,12 +89,25 @@ void get_initial_population_distribution_of_exact_init_size(population_size *n_p
     }
 }
 
-/*****************************************************************************/
-// Function: initialize_child_population()
-/* Function does: Initializes the child_population structure given fertility rate and number of women by age group.
- * Note: child_population is the number of children who are in each per-timestep age group. Thus at each timestep this
- * specifies the number of children reaching adulthood. */
-/*****************************************************************************/
+
+/**************************************************************************//**
+ * @brief Function initializes the child_population structure given 
+ * fertility rate and number of women by age group.
+ * 
+ * @details Note that parameter `child_population` 
+ * (a @ref child_population_struct) is the number of children who are in 
+ * each per-timestep age group. Thus at each timestep this specifies the 
+ * number of children reaching adulthood
+ * 
+ * @param param Pointer to the @ref parameters struct
+ * @param child_population Pointer to the @ref child_population_struct struct
+ * @param n_population_stratified Pointer to the @ref stratified_population_size struct
+ * @param country_setting Integer specifying the country setting (see @ref constants.h for details)
+ * @param age_list Pointer to the @ref age_list_struct struct
+ * 
+ * @return Nothing, changes the objects in place
+ *****************************************************************************/
+
 void initialize_child_population(parameters *param, child_population_struct *child_population, 
         stratified_population_size *n_population_stratified, int country_setting, age_list_struct *age_list){
 
@@ -163,25 +160,38 @@ void initialize_child_population(parameters *param, child_population_struct *chi
 }
 
 
-/*****************************************************************************/
-/* Function arguments: risk group of individual
-* Function does: This is a placeholder - should return a number of partners based on some data.
-* Function returns: The maximum number of partners that an individual can have in that risk group 
-* (may also depend on age/gender?). */
-/*****************************************************************************/
+/**************************************************************************//**
+ * @brief This function is a placeholder and should return a number of 
+ * partners based upon gender, age, risk group
+ * 
+ * @param g Gender
+ * @param ag Age group
+ * @param r Risk group
+ * @param param Pointer to the @ref parameters struct
+ * 
+ * @return The maximum number of partners that an individual can have in that
+ * risk group (may also depend on age/gender).
+ *****************************************************************************/
+
 int set_max_n_partners(int g, int ag, int r, parameters *param){
     return param->max_n_part_noage[r];
 }
 
 
-/*****************************************************************************/
-/* Function arguments: age group of an individual, pointer to "parameter" structure, current time t, 
- * a pointer to age_year which is the age_group that the individual belongs to (we pass as a pointer so 
- * we can change it).
- * Function does: assumes that ages are uniformly distributed between the lower and upper limits of that 
- * age group, assigns an age randomly and then calculates the DoB. The variable age_group is also modified. 
- * Function returns: The DoB of that person. The variable age_group is also modified. */
-/*****************************************************************************/
+/**************************************************************************//**
+ * @brief Assign a date of birth (DoB) given age and time
+ * 
+ * @details
+ * This function assumes that ages are uniformly distributed between the 
+ * lower and upper limits of that age group, assigns an age randomly and 
+ * then calculates the DoB. The variable age_group is also modified.
+ * 
+ * @param ag Age group of an individual
+ * @param t Time point in question
+ * @param aa_ptr Pointer to the age group that the individual belongs to
+ * 
+ * @return The DoB of the person in question, variable `age_group` is modified
+ *****************************************************************************/
 
 double make_DoB(int ag, double t, int *aa_ptr){
     double age;
@@ -199,18 +209,20 @@ double make_DoB(int ag, double t, int *aa_ptr){
 
     *aa_ptr = (int) (age-AGE_ADULT);
 
-    /* This gives the DoB: */
+    // Return the DoB
     return t - age;
 }
 
 
-/*****************************************************************************/
-// Function: set_population_count_zero()
-/* Function arguments: pointer to the "population" structure which contains information about the 
-* number of people in each risk, age and gender group and overall.
-* Function does: Initializes all of these as zero. 
-* Function is used to set n_pop_available_partners to zero. */
-/*****************************************************************************/
+/**************************************************************************//**
+ * @brief Reset population counter to zero
+ * 
+ * @details Sets the array `pop_size_per_gender_age_risk` within 
+ * @ref population_size to zero for all gender, age groups, and risk groups
+ * 
+ * @param n_pop Pointer to the @ref population_size struct
+ * 
+ *****************************************************************************/
 
 void set_population_count_zero(population_size *n_pop){
     int g,ag,r;
@@ -224,11 +236,20 @@ void set_population_count_zero(population_size *n_pop){
 }
 
 
-/*****************************************************************************/
-// Function: set_population_count_one_year_zero()
-/* Function does: Initializes n_population structure (which is number of people by gender x one-year age groups x risk group
- *  to zero and sets youngest_age_group_index as 0. */
-/*****************************************************************************/
+/**************************************************************************//**
+ * @brief Function sets structure for population size to zero
+ * 
+ * @details This function initializes `n_population`, a structure of type
+ * @ref population_size_one_year_age, representing the number of people by 
+ * gender X one-year age groups X risk group, to zero.
+ * 
+ * This function also sets `youngest_age_group_index` to 0, an attribute
+ * of a @ref population_size_one_year_age struct.
+ * 
+ * @param n_population Pointer to the @ref population_size_one_year_age struct
+ * 
+ * @return Nothing, changes the objects in place
+ *****************************************************************************/
 
 void set_population_count_one_year_zero(population_size_one_year_age *n_population){
     int g,aa,r;
@@ -244,9 +265,14 @@ void set_population_count_one_year_zero(population_size_one_year_age *n_populati
 }
 
 
-/*****************************************************************************/
-// Function: set_population_count_stratified_zero()
-/*****************************************************************************/
+/**************************************************************************//**
+ * @brief Set the stratified population counters to zero
+ * 
+ * @param n_population_stratified Structure for storing 
+ * stratified population size (a @ref stratified_population_size struct).
+ * 
+ * @return void, changes the objects in place
+*****************************************************************************/
 
 void set_population_count_stratified_zero(stratified_population_size *n_population_stratified){
     int g,ag,r;
@@ -268,49 +294,69 @@ void set_population_count_stratified_zero(stratified_population_size *n_populati
 }
 
 
-/*****************************************************************************/
-// Function: set_population_count_stratified()
-/*****************************************************************************/
+/**************************************************************************//**
+ * @brief Set the population count stratified object to population size
+ * 
+ * @details Sets stratified population counter to align with counts in a
+ * @ref population_size object.  Values are multiplied by a float (1.0) to
+ * avoid integer division.
+ * 
+ * @param n_population_stratified Structure for storing stratified population size
+ *  (@ref stratified_population_size struct)
+ * @param pop Structure for storing population size (@ref population_size struct)
+ * 
+ * @return void, changes the objects in place
+*****************************************************************************/
 
 void set_population_count_stratified(stratified_population_size *n_population_stratified, 
         population_size *pop){
     int g,ag,r;
 
-    set_population_count_stratified_zero(n_population_stratified);           /* Sets to zero each element in this structure, which stores number of people in the population. */
+    /* Set to zero each element in this structure, 
+    which stores number of people in the population. */
+    set_population_count_stratified_zero(n_population_stratified);
 
-    for (r=0; r<N_RISK; r++){
-        for (ag=0; ag<N_AGE; ag++){
-            for(g=0 ; g<N_GENDER ; g++)
-            {
-                n_population_stratified->pop_size_per_gender_age[g][ag] += pop->pop_size_per_gender_age_risk[g][ag][r];
-                n_population_stratified->pop_size_per_gender_risk[g][r] += pop->pop_size_per_gender_age_risk[g][ag][r];
-                n_population_stratified->total_pop_size_per_gender[g] += pop->pop_size_per_gender_age_risk[g][ag][r];
-                n_population_stratified->total_pop_size += pop->pop_size_per_gender_age_risk[g][ag][r];
+    for(r=0; r<N_RISK; r++){
+        for(ag=0; ag<N_AGE; ag++){
+            for(g=0 ; g<N_GENDER; g++){
+                n_population_stratified->pop_size_per_gender_age[g][ag] += 
+                    pop->pop_size_per_gender_age_risk[g][ag][r];
+                n_population_stratified->pop_size_per_gender_risk[g][r] += 
+                    pop->pop_size_per_gender_age_risk[g][ag][r];
+                n_population_stratified->total_pop_size_per_gender[g] += 
+                    pop->pop_size_per_gender_age_risk[g][ag][r];
+                n_population_stratified->total_pop_size += 
+                    pop->pop_size_per_gender_age_risk[g][ag][r];
             }
         }
     }
-
+    /* Multiply denominator by 1.0 to make it a float 
+    (C will do integer division if both numerator and denominator are int). */
     for (r=0; r<N_RISK; r++){
-        for(g=0 ; g<N_GENDER ; g++)
-        {
-            /* Multiply denominator by 1.0 to make it a float (C will do integer division if both numerator and denominator are int). */
-            n_population_stratified->prop_pop_per_gender_risk[g][r] = n_population_stratified->pop_size_per_gender_risk[g][r]/(1.0*n_population_stratified->total_pop_size_per_gender[g]);
-
+        for(g=0 ; g<N_GENDER ; g++){
+            n_population_stratified->prop_pop_per_gender_risk[g][r] = 
+                n_population_stratified->pop_size_per_gender_risk[g][r]/
+                    (1.0*n_population_stratified->total_pop_size_per_gender[g]);
         }
     }
 }
 
 
-/*****************************************************************************/
-// Function: set_up_population()
-/* Function arguments: pointer to the "population" structure which contains information about the number of 
- * people in each risk, age and gender group and overall; pointer to the "individual_population" array of 
- * individuals, pointer to the age-list structure; pointer to the "parameter" structure.
- * Function does: Assigns values to each "individual" structure within the "cluster population" - ie gives 
- * them gender, DoB, riskiness, etc.
- * NOTE: It assigns "-1" to variables such as SPVL and CD4 which will be initialized if the individual 
- * gets HIV, and it sets the numbers of current partners to zero as we initialize partnerships later on. */
-/*****************************************************************************/
+/**************************************************************************//**
+ * @brief This function assigns values to each @ref individual structure 
+ * within the "cluster population" - ie gives them gender, DoB, riskiness, etc.
+ * 
+ * @details This function assigns "-1" to variables such as SPVL and CD4 which
+ * will be initialized if the individual gets HIV, and it sets the numbers of
+ * current partners to zero as we initialize partnerships later on.
+ * 
+ * @param p patch number
+ * @param patch pointer to the patch object, storing information about the patch
+ * @param pop a pointer to @ref population structure which contains information
+ * about the number of people in each risk, age and gender group and overall.
+ * 
+ * @return void, changes the objects in place
+ *****************************************************************************/
 
 void set_up_population(int p, patch_struct *patch, population *pop){
 
@@ -334,7 +380,8 @@ void set_up_population(int p, patch_struct *patch, population *pop){
 
     patch[p].DEBUG_NHIVPOS = 0;
     patch[p].DEBUG_NHIVPOSLASTYR = 0;
-    /* Stores number of people who ever died from HIV-related illness. Can get e.g. yearly total by taking difference between two years*/
+    /* Stores number of people who ever died from HIV-related illness. 
+    Can get e.g. yearly total by taking difference between two years*/
     patch[p].OUTPUT_NDIEDFROMHIV = 0;
 
 
@@ -569,14 +616,26 @@ void set_up_population(int p, patch_struct *patch, population *pop){
 }
 
 
-/*****************************************************************************/
-// Function: init_available_partnerships()
-/* This function fills in (*pop_available_partners) and (*n_pop_available_partners) using (*pop) and (*n_population) 
- * it counts all the "free partnerships" and points to them in pop_available_partners, with associated numbers of 
- * free partnerships stored in n_pop_available_partners */
-/*****************************************************************************/
+/**************************************************************************//**
+ * @brief
+ * @details This function fills in `pop_available_partners` and 
+ * `n_pop_available_partners` (both within @ref all_partnerships struct)
+ * using pop (a @ref population struct) and `n_population` (on the 
+ * @ref patch_struct struct), it counts all the "free partnerships" and points
+ * to them in `pop_available_partners` (on @ref all_partnerships struct), 
+ * with associated numbers of free partnerships stored in 
+ * `n_pop_available_partners` (on an @ref all_partnerships struct).
+ * 
+ * @param p patch number
+ * @param patch pointer to the patch object, storing information about the patch
+ * @param overall_partnerships pointer to the all_partnerships struct
+ * @param pop pointer to the population struct
+ * 
+ * @return void, changes the objects in place
+ *****************************************************************************/
 
-void init_available_partnerships(int p, patch_struct *patch, all_partnerships *overall_partnerships,population *pop){
+void init_available_partnerships(int p, patch_struct *patch, 
+    all_partnerships *overall_partnerships, population *pop){
 
     int g,ag,r;   /* Indices over gender, age group and risk group and patch. */
     long i;       /* Index to loop over number of people. */
@@ -603,10 +662,13 @@ void init_available_partnerships(int p, patch_struct *patch, all_partnerships *o
 }
 
 
-/*****************************************************************************/
-// Function: init_cumulative_counters()
-/* Set all cumulative counters to zero (number of HIV tests, CD4 tests etc. ) : */
-/*****************************************************************************/
+/**************************************************************************//**
+ * @brief Set all cumulative counters to zero (no. HIV tests, CD4 tests etc.)
+ * 
+ * @param cumulative_outputs Pointer to a @ref cumulative_outputs_struct
+ * 
+ * @return void, objects are set to zero
+ *****************************************************************************/
 
 void init_cumulative_counters(cumulative_outputs_struct *cumulative_outputs){
     cumulative_outputs->N_total_CD4_tests_nonpopart = 0;
@@ -620,23 +682,17 @@ void init_cumulative_counters(cumulative_outputs_struct *cumulative_outputs){
 }
 
 
-/*****************************************************************************/
-// Function: init_calendar_counters()
-/* Set all array elements of arrays in the calendar outputs to zero 
-(number of HIV tests, CD4 tests etc. ).  Used in cost-effectiveness analysis.  
-
-Arguments
----------
-calendar_outputs : pointer to calendar_outputs_struct
-    Patch-specific structure housing a number of arrays that count yearly events (index starts
-    from first year of the simulation; i.e. a[0] is for year 1900 if the simulation starts 
-    in the year 1900).  
-
-Returns
--------
-Nothing; sets the values of the calendar array elements to zero.  
-*/
-/*****************************************************************************/
+/**************************************************************************//**
+ * @brief Set all array elements of arrays in the calendar outputs to zero 
+ * (number of HIV tests, CD4 tests etc. ) (Used in cost-effectiveness analysis)
+ * 
+ * @param calendar_outputs pointer to calendar_outputs_struct, a patch-specific
+ * structure housing a number of arrays that count yearly events (index starts
+ * from first year of the simulation; i.e. a[0] is for year 1900 if the 
+ * simulation starts in the year 1900).
+ * 
+ * @return void, sets the values of the calendar array elements to zero.
+ *****************************************************************************/
 
 void init_calendar_counters(calendar_outputs_struct *calendar_outputs){
     
@@ -671,35 +727,29 @@ void init_calendar_counters(calendar_outputs_struct *calendar_outputs){
 }
 
 
-/*****************************************************************************/
-// Function: initialise_debug_variables()
-/*****************************************************************************/
+/**************************************************************************//**
+ * @brief Initialise variables used for debugging by setting them to zero
+ * 
+ * @return void, sets variables to zero
+ *****************************************************************************/
 
 void initialise_debug_variables(debug_struct *debug){
     int year, age_f, age_m, risk_f, risk_m;
     int p, art_i, art_j;
-
-    for(year=0 ; year<MAX_N_YEARS ; year++)
-    {
-        for(age_f=0 ; age_f<N_AGE ; age_f++)
-        {
-            for(age_m=0 ; age_m<N_AGE ; age_m++)
-            {
+    for(year=0 ; year<MAX_N_YEARS ; year++){
+        for(age_f=0 ; age_f<N_AGE ; age_f++){
+            for(age_m=0 ; age_m<N_AGE ; age_m++){
                 debug->age_of_partners_at_partnership_formation[year][age_f][age_m] = 0;
                 debug->age_of_partners_cross_sectional[year][age_f][age_m] = 0;
             }
         }
-
-        for(risk_f=0 ; risk_f<N_RISK ; risk_f++)
-        {
-            for(risk_m=0 ; risk_m<N_RISK ; risk_m++)
-            {
+        for(risk_f=0 ; risk_f<N_RISK ; risk_f++){
+            for(risk_m=0 ; risk_m<N_RISK ; risk_m++){
                 debug->risk_of_partners_at_partnership_formation[year][risk_f][risk_m] = 0;
                 debug->risk_of_partners_cross_sectional[year][risk_f][risk_m] = 0;
             }
         }
     }
-
     for (p=0;p<NPATCHES;p++){
         debug->art_vars[p].n_start_emergency_art_fromuntested = 0;
         debug->art_vars[p].n_start_emergency_art_fromartnaive = 0;
