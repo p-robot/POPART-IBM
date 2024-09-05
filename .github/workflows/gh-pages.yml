@@ -15,3 +15,4 @@ jobs:
         run: sudo apt-get install -y doxygen;
       - name: Run Doxygen
         run: (cd src; doxygen Doxyfile)
+
