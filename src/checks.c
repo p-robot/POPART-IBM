@@ -1,18 +1,7 @@
-/*  This file is part of the PopART IBM.
-
-    The PopART IBM is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    The PopART IBM is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with the PopART IBM.  If not, see <http://www.gnu.org/licenses/>.
- */
+/**************************************************************************//**
+ * @file checks.c
+ * @brief Functions for checking the validity of the model.
+ *****************************************************************************/
 
 #include "checks.h"
 #include "utilities.h"
@@ -20,22 +9,17 @@
 #include "demographics.h"
 #include "hiv.h"
 
-// Function: check_partnership_formation()
-// 
-// Creates 2 women and 2 men, forms partnerships between them and prints output.
-// Memory for these is allocated and freed inside the function.
-//
-// Parameters
-// ----------
-//
-// overall_partnerships: pointer to all_partnerships structure
-// param: pointer to parameters structure
-// debug : pointer to debug_struct structure
-// file_data_store : pointer to a file_struct structure
-//
-// Returns
-// -------
-// Nothing; performs a test
+
+/**************************************************************************//**
+ * @brief Check partnership formation
+ * @details Creates 2 women and 2 men, forms partnerships between them and
+ * prints output.  Memory for these is allocated and freed inside the function.
+ * 
+ * @param overall_partnerships pointer to an @ref all_partnerships structure
+ * @param param pointer to a @ref parameters structure
+ * @param debug pointer to @ref debug_struct structure
+ * @param file_data_store pointer to a @ref file_struct structure
+ *****************************************************************************/
 
 void check_partnership_formation(all_partnerships *overall_partnerships, parameters *param, 
     debug_struct *debug, file_struct *file_data_store){
@@ -111,24 +95,19 @@ void check_partnership_formation(all_partnerships *overall_partnerships, paramet
 }
 
 
-// Function: check_partnership_formation_and_HIV_acquisition()
-// Same as check_partnership_formation() but with possible HIV transmission
-//
-// Creates 2 women (indiv1 and indiv2) and 2 men (indiv3 and indiv4)
-//
-// Parameters
-// ----------
-// patch_struct : pointer to a patch structure
-// p : int
-// all_partnerships : pointer to an overall_partnerships structure
-// output_struct : pointer to an output structure
-// debug_struct : pointer to a debug structure
-// file_struct : pointer to a file_data_store structure
-//
-//
-// Returns
-// -------
-// Nothing; performs a check
+/**************************************************************************//**
+ * @brief Check partnership formation with possible HIV transmission
+ * 
+ * @details Same as check_partnership_formation() but with possible HIV 
+ * transmission.  Creates 2 women (indiv1 and indiv2) and 2 men 
+ * (indiv3 and indiv4)
+ * @param patch pointer to a @ref patch_struct structue
+ * @param p patch number
+ * @param overall_partnerships pointer to an @ref all_partnerships structure
+ * @param output pointer to an @ref output_struct structure
+ * @param debug pointer to a @ref debug_struct structure
+ * @param file_data_store pointer to a @ref file_struct structure
+ *****************************************************************************/
 
 void check_partnership_formation_and_HIV_acquisition(patch_struct *patch, int p, 
     all_partnerships *overall_partnerships, output_struct *output, debug_struct *debug, 
@@ -226,7 +205,6 @@ void check_partnership_formation_and_HIV_acquisition(patch_struct *patch, int p,
     print_partners(indiv3);
     print_partners(indiv4);
 
-
     printf("List of serodiscordant partnerships:\n");
     for(i = 0; i < *overall_partnerships->n_partnerships; i++){
         if(is_serodiscordant(&overall_partnerships->partner_pairs[i])){
@@ -289,13 +267,17 @@ void check_partnership_formation_and_HIV_acquisition(patch_struct *patch, int p,
 }
 
 
-// Function: check_partnership_dissolution()
-// 
-// Create 2 women and 2 men, forms partnerships, then dissolves some of them (at a time NOT
-// given by the duration of the partnerships, so e.g. this is what would happen if one of the
-// partners die).
-// 
-// 
+/**************************************************************************//**
+ * @brief Check partnership dissolution
+ * @details Create 2 women and 2 men, forms partnerships, then dissolves some
+ * of them (at a time NOT given by the duration of the partnerships, so 
+ * e.g. this is what would happen if one of the partners die).
+ * 
+ * @param overall_partnerships
+ * @param param
+ * @param debug
+ * @param file_data_store
+*****************************************************************************/
 
 void check_partnership_dissolution(all_partnerships *overall_partnerships, parameters *param, 
     debug_struct *debug, file_struct *file_data_store){
@@ -413,25 +395,21 @@ void check_partnership_dissolution(all_partnerships *overall_partnerships, param
 }
 
 
-// Function: make_fake_population()
-// The combination of the two functions below (to be executed together in this order)
-// * first create an arbitrary population_size object with a certain distribution of the population
-// * and then calculates and prints the number of partnerships to be drawn between each gender/age/risk groups in one time step given this current population distribution
-// * (This allows checking that partnerships are drawn preferentially with similar age/risk groups)
-// make_fake_population(n_population);
-// check_draw_number_partnership(param);
-//
-// Parameters
-// ----------
-// n_pop: a pointer to a structure of type population_size, to be filled in by this function
-//
-// stratified_population_size *n_pop_strat
-//
+/**************************************************************************//**
+ * @brief Create a mock population of random size
+ * @details This function creates a @ref population_size object 
+ * with a certain distribution of the population and then calculates and prints 
+ * the number of partnerships to be drawn between each gender/age/risk groups in 
+ * one time step given this current population distribution (This allows checking
+ * that partnerships are drawn preferentially with similar age/risk groups).
+ * 
+ * @param n_pop a pointer to a structure of type @ref population_size
+ *  to be filled in by this function
+ * @param n_pop_strat pointer to a @ref stratified_population_size structure
+*****************************************************************************/
 
 void make_fake_population(population_size *n_pop, stratified_population_size *n_pop_strat){
-
     int g, ag, r;
-
     for(g = 0; g < N_GENDER; g++){
         for(ag = 0; ag < N_AGE; ag++){
             for(r = 0; r < N_RISK; r++){
@@ -443,17 +421,13 @@ void make_fake_population(population_size *n_pop, stratified_population_size *n_
 }
 
 
-// Function : check_draw_number_partnership()
-//
-// Parameters
-// ----------
-//
-// patch_struct : pointer to a patch structure
-// p : int
-//  Patch number
-//
-// Returns
-// -------
+/**************************************************************************//**
+ * @brief Check the number of partnerships drawn between subgroups in the 
+ * population
+ * 
+ * @param patch pointer to a @ref patch_struct structure
+ * @param p patch number
+ ****************************************************************************/
 
 void check_draw_number_partnership(patch_struct *patch, int p){
 
@@ -483,18 +457,13 @@ void check_draw_number_partnership(patch_struct *patch, int p){
 }
 
 
-// Function: check_available_partnerships()
-// for debugging loops over all free partners but does not do super interesting stuff
-//
-//
-// Parameters
-// ----------
-//
-//
-//
-// Returns
-// -------
-// Nothing;
+/**************************************************************************//**
+ * @brief Function for printing all available partnerships at a given time
+ * 
+ * @details Used for debugging
+ * @param pop_available_partners pointer to a @ref population_partners structure
+ * @param n_pop_available_partners pointer to a @ref population_size_all_patches structure
+ ****************************************************************************/
 
 void check_available_partnerships(population_partners *pop_available_partners, 
     population_size_all_patches *n_pop_available_partners){
@@ -519,17 +488,14 @@ void check_available_partnerships(population_partners *pop_available_partners,
 }
 
 
-// Function: check_males_females()
-// Print the total population size, count and print number of males and females in the popn.
-//
-// Parameters
-// ----------
-// n_population_stratified: pointer to a stratified_population_size structure
-// individual_population : pointer to an individual structure (or array)
-//
-// Returns
-// -------
-// Nothing; simply performs a check and prints output.
+/**************************************************************************//**
+ * @brief Print the total population size, count and print number of 
+ * males and females in the population.
+ * 
+ * @param n_population_stratified pointer to a 
+ *  @ref stratified_population_size structure
+ * @param individual_population pointer to an individual structure (or array)
+ ****************************************************************************/
 
 void check_males_females(stratified_population_size *n_population_stratified, 
     individual *individual_population){
@@ -545,22 +511,16 @@ void check_males_females(stratified_population_size *n_population_stratified,
 }
 
 
-// Function: print_dob()
-// Print the date of birth of every individual in the population
-//
-// Parameters
-// ----------
-// n_population_stratified : pointer to a stratified_population_size structure
-// individual_population : pointer to an individual structure
-//
-// Returns
-// -------
-// Nothing; simply prints output of date-of-births
-//
-// Example
-// -------
-// Can be used within main()
-// print_dob(n_population,individual_population);
+/**************************************************************************//**
+ * @brief Print the date of birth of every individual in the population
+ * 
+ * @details Not currently used but can be used within main().
+ * e.g. `print_dob(n_population,individual_population);`
+ * 
+ * @param n_population_stratified pointer to a 
+ * @ref stratified_population_size structure
+ * @param individual_population pointer to an individual structure
+ ****************************************************************************/
 
 void print_dob(stratified_population_size *n_population_stratified, 
     individual *individual_population){
@@ -573,24 +533,17 @@ void print_dob(stratified_population_size *n_population_stratified,
 }
 
 
-// Function: validate_ages_based_on_age_group()
-// Print out the age of everyone in age "age" at time t (calculated via DoB).
-//
-// This function is a validation test to ensure age groups haven't been miscalculated.
-// Not currently used but could be used within the main() function.
-//
-//
-// Parameters
-// ----------
-// age_list_struct : pointer to age_list structure
-// age : int
-// t : double
-// 
-// Returns
-// -------
-//
-// Example
-// -------
+/**************************************************************************//**
+ * @brief Print out the age of everyone in a specific at time t.
+ * 
+ * @details This function is a validation test to ensure age groups haven't
+ * been miscalculated.  Not currently used but can be used within main().
+ * Ages calculated via DoB.
+ * 
+ * @param age_list pointer to an @ref age_list_struct structure
+ * @param age Age group of interest
+ * @param t Time point of interest
+ ****************************************************************************/
 
 void validate_ages_based_on_age_group(age_list_struct *age_list, int age, double t){
     
