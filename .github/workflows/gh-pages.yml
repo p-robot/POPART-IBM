@@ -11,6 +11,5 @@ jobs:
     steps:
       - uses: mattnotmitt/doxygen-action@1.9.8
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
           doxyfile-path: './Doxyfile'
           working-directory: './src'
