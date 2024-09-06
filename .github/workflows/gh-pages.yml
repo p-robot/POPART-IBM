@@ -1,4 +1,4 @@
-name: docs
+name: Generate docs using Doxygen and publish on Github Pages
 on:
   push:
     branches:
@@ -19,7 +19,8 @@ jobs:
         run: sudo apt-get install -y doxygen;
       - name: Run Doxygen
         run: (cd src; doxygen Doxyfile)
-      - run: (cd docs; find . -maxdepth 1 -exec mv {} .. \;)
+      - name: Copy files from docs to project folder (so index.html is seen)
+        run: (cd docs; find . -maxdepth 1 -exec mv {} .. \;)
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
