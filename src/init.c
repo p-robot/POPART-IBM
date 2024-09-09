@@ -14,15 +14,14 @@
  * @brief This function calculates the proportion of the population in each
  *  risk group (gender x age x risk) at the start of the simulation
  * 
- * @details This function uses the initial values in the `params_init.txt`
+ * @details To return value, this function changes the objects in place.  
+ * This function uses the initial values in the `params_init.txt`
  * file to calculate the proportion of the population in each risk group,
  * disaggregated by gender, age, and risk group, at the start of the 
  * simulation.  The function populates these in @ref population_size struct
  * 
  * @param n_population Pointer to the @ref population_size struct
  * @param param Pointer to the @ref parameters struct
- * 
- * @return void, changes the objects in place
 *****************************************************************************/
 
 void get_initial_population_distribution(population_size *n_population, parameters *param){
@@ -39,10 +38,10 @@ void get_initial_population_distribution(population_size *n_population, paramete
  * @brief Function to generate initial population distribution that is limited to be the
  * same size as the specified initial population size.
  * 
+ * @details Changes the objects in place, to return value.
+ * 
  * @param n_population Pointer to the @ref population_size struct
  * @param param Pointer to the @ref parameters struct
- * 
- * @return Nothing, changes the objects in place
 *****************************************************************************/
 
 void get_initial_population_distribution_of_exact_init_size(population_size *n_population, parameters *param){
@@ -97,15 +96,14 @@ void get_initial_population_distribution_of_exact_init_size(population_size *n_p
  * @details Note that parameter `child_population` 
  * (a @ref child_population_struct) is the number of children who are in 
  * each per-timestep age group. Thus at each timestep this specifies the 
- * number of children reaching adulthood
+ * number of children reaching adulthood.  This function changes objects in 
+ * place, no return value.
  * 
  * @param param Pointer to the @ref parameters struct
  * @param child_population Pointer to the @ref child_population_struct struct
  * @param n_population_stratified Pointer to the @ref stratified_population_size struct
  * @param country_setting Integer specifying the country setting (see @ref constants.h for details)
  * @param age_list Pointer to the @ref age_list_struct struct
- * 
- * @return Nothing, changes the objects in place
  *****************************************************************************/
 
 void initialize_child_population(parameters *param, child_population_struct *child_population, 
@@ -184,28 +182,29 @@ int set_max_n_partners(int g, int ag, int r, parameters *param){
  * @details
  * This function assumes that ages are uniformly distributed between the 
  * lower and upper limits of that age group, assigns an age randomly and 
- * then calculates the DoB. The variable age_group is also modified.
+ * then calculates the DoB. The variable aa_ptr is also modified.
+ * 
+ * AGE_GROUP[] gives the lower bound of each age group, so need to adapt 
+ * if in last age group.  Note that we initialise the population to be 
+ * 14+ and then add in 13 year-olds over the course of the first year. 
+ * Use function gsl_rng_uniform_pos as this samples on (0,1) and ensures
+ * we never have a DoB which is exactly at the start of any year.
  * 
  * @param ag Age group of an individual
  * @param t Time point in question
  * @param aa_ptr Pointer to the age group that the individual belongs to
  * 
- * @return The DoB of the person in question, variable `age_group` is modified
+ * @return The DoB of the person in question
  *****************************************************************************/
 
 double make_DoB(int ag, double t, int *aa_ptr){
     double age;
-    /* AGE_GROUP[] gives the lower bound of each age group, so need to adapt if in last age group. 
-     * Note that we initialise the population to be 14+ and then add in 13 year-olds over the course of the first year. 
-     * Use function gsl_rng_uniform_pos as this samples on (0,1) and ensures we never have a DoB which is exactly
-     * at the start of any year. */ 
-
     if (ag==0)
-        age = (AGE_GROUPS[0]+1) + (AGE_GROUPS[1]-(AGE_GROUPS[0]+1))*gsl_rng_uniform_pos (rng);
+        age = (AGE_GROUPS[0]+1) + (AGE_GROUPS[1]-(AGE_GROUPS[0]+1))*gsl_rng_uniform_pos(rng);
     else if (ag<N_AGE-1)
-        age = AGE_GROUPS[ag] + (AGE_GROUPS[ag+1]-AGE_GROUPS[ag])*gsl_rng_uniform_pos (rng);
+        age = AGE_GROUPS[ag] + (AGE_GROUPS[ag+1]-AGE_GROUPS[ag])*gsl_rng_uniform_pos(rng);
     else
-        age = AGE_GROUPS[ag] + (MAX_AGE-AGE_GROUPS[ag])*gsl_rng_uniform_pos (rng);  
+        age = AGE_GROUPS[ag] + (MAX_AGE-AGE_GROUPS[ag])*gsl_rng_uniform_pos(rng);
 
     *aa_ptr = (int) (age-AGE_ADULT);
 
@@ -221,7 +220,6 @@ double make_DoB(int ag, double t, int *aa_ptr){
  * @ref population_size to zero for all gender, age groups, and risk groups
  * 
  * @param n_pop Pointer to the @ref population_size struct
- * 
  *****************************************************************************/
 
 void set_population_count_zero(population_size *n_pop){
@@ -244,11 +242,10 @@ void set_population_count_zero(population_size *n_pop){
  * gender X one-year age groups X risk group, to zero.
  * 
  * This function also sets `youngest_age_group_index` to 0, an attribute
- * of a @ref population_size_one_year_age struct.
+ * of a @ref population_size_one_year_age struct.  This function changes the
+ * objects in place, to return value.
  * 
  * @param n_population Pointer to the @ref population_size_one_year_age struct
- * 
- * @return Nothing, changes the objects in place
  *****************************************************************************/
 
 void set_population_count_one_year_zero(population_size_one_year_age *n_population){
@@ -268,10 +265,10 @@ void set_population_count_one_year_zero(population_size_one_year_age *n_populati
 /**************************************************************************//**
  * @brief Set the stratified population counters to zero
  * 
+ * @details No return value, changes objects in place
+ * 
  * @param n_population_stratified Structure for storing 
  * stratified population size (a @ref stratified_population_size struct).
- * 
- * @return void, changes the objects in place
 *****************************************************************************/
 
 void set_population_count_stratified_zero(stratified_population_size *n_population_stratified){
@@ -299,13 +296,11 @@ void set_population_count_stratified_zero(stratified_population_size *n_populati
  * 
  * @details Sets stratified population counter to align with counts in a
  * @ref population_size object.  Values are multiplied by a float (1.0) to
- * avoid integer division.
+ * avoid integer division.  No return value, changes objects in place.
  * 
  * @param n_population_stratified Structure for storing stratified population size
  *  (@ref stratified_population_size struct)
  * @param pop Structure for storing population size (@ref population_size struct)
- * 
- * @return void, changes the objects in place
 *****************************************************************************/
 
 void set_population_count_stratified(stratified_population_size *n_population_stratified, 
@@ -348,14 +343,13 @@ void set_population_count_stratified(stratified_population_size *n_population_st
  * 
  * @details This function assigns "-1" to variables such as SPVL and CD4 which
  * will be initialized if the individual gets HIV, and it sets the numbers of
- * current partners to zero as we initialize partnerships later on.
+ * current partners to zero as we initialize partnerships later on.  No return
+ * value, changes objects in place.
  * 
  * @param p patch number
  * @param patch pointer to the patch object, storing information about the patch
  * @param pop a pointer to @ref population structure which contains information
  * about the number of people in each risk, age and gender group and overall.
- * 
- * @return void, changes the objects in place
  *****************************************************************************/
 
 void set_up_population(int p, patch_struct *patch, population *pop){
@@ -624,14 +618,13 @@ void set_up_population(int p, patch_struct *patch, population *pop){
  * @ref patch_struct struct), it counts all the "free partnerships" and points
  * to them in `pop_available_partners` (on @ref all_partnerships struct), 
  * with associated numbers of free partnerships stored in 
- * `n_pop_available_partners` (on an @ref all_partnerships struct).
+ * `n_pop_available_partners` (on an @ref all_partnerships struct).  No return
+ * value, changes the objects in place.
  * 
  * @param p patch number
  * @param patch pointer to the patch object, storing information about the patch
  * @param overall_partnerships pointer to the all_partnerships struct
  * @param pop pointer to the population struct
- * 
- * @return void, changes the objects in place
  *****************************************************************************/
 
 void init_available_partnerships(int p, patch_struct *patch, 
@@ -665,9 +658,9 @@ void init_available_partnerships(int p, patch_struct *patch,
 /**************************************************************************//**
  * @brief Set all cumulative counters to zero (no. HIV tests, CD4 tests etc.)
  * 
- * @param cumulative_outputs Pointer to a @ref cumulative_outputs_struct
+ * @details No return value, changes objects in place.
  * 
- * @return void, objects are set to zero
+ * @param cumulative_outputs Pointer to a @ref cumulative_outputs_struct
  *****************************************************************************/
 
 void init_cumulative_counters(cumulative_outputs_struct *cumulative_outputs){
@@ -686,12 +679,13 @@ void init_cumulative_counters(cumulative_outputs_struct *cumulative_outputs){
  * @brief Set all array elements of arrays in the calendar outputs to zero 
  * (number of HIV tests, CD4 tests etc. ) (Used in cost-effectiveness analysis)
  * 
+ * @details No return value, sets the values of the calendar array elements 
+ * to zero.
+ * 
  * @param calendar_outputs pointer to calendar_outputs_struct, a patch-specific
  * structure housing a number of arrays that count yearly events (index starts
  * from first year of the simulation; i.e. a[0] is for year 1900 if the 
  * simulation starts in the year 1900).
- * 
- * @return void, sets the values of the calendar array elements to zero.
  *****************************************************************************/
 
 void init_calendar_counters(calendar_outputs_struct *calendar_outputs){
@@ -730,7 +724,7 @@ void init_calendar_counters(calendar_outputs_struct *calendar_outputs){
 /**************************************************************************//**
  * @brief Initialise variables used for debugging by setting them to zero
  * 
- * @return void, sets variables to zero
+ * @details No return value, sets variables to zero.
  *****************************************************************************/
 
 void initialise_debug_variables(debug_struct *debug){
