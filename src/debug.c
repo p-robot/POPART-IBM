@@ -8,7 +8,16 @@
 #include "debug.h"
 
 
-void find_in_age_list(double t,individual* person_to_find, age_list_struct *age_list, 
+/**************************************************************************//**
+ * @brief Find individual in age list
+ * 
+ * @param t Current time
+ * @param person_to_find Pointer to an @ref individual struct
+ * @param age_list Pointer to an @ref age_list_struct struct
+ * @param param Pointer to a @ref parameters struct
+ ****************************************************************************/
+
+void find_in_age_list(double t, individual* person_to_find, age_list_struct *age_list, 
     parameters *param){
 
     int ai_age_calc; /* This is the calculated ai index. */
@@ -158,9 +167,9 @@ void count_population_by_going_through_indiv(patch_struct *patch,
  * 
  * @details In contrast to @ref count_population_by_going_through_indiv(), 
  * this function counts the number of individuals in each gender by traversing
- *  the arrays:\n
- * @ref patch_struct`->age_list->age_list_by_gender[GENDER]->number_per_age_group[AGEYEAR]`\n
- * @ref patch_struct`->age_list->age_list_by_gender[GENDER]->number_oldest_age_group`.\n
+ *  the arrays in @ref patch_struct objects:\n
+ * `patch_struct->age_list->age_list_by_gender[GENDER]->number_per_age_group[AGEYEAR]`\n
+ * `patch_struct->age_list->age_list_by_gender[GENDER]->number_oldest_age_group`.\n
  * Used in @ref count_population_size_three_ways().
  * 
  * @param patch Patch structure in the simulation
@@ -1103,7 +1112,7 @@ void sweep_through_all_and_check_age_and_risk_of_partners(patch_struct *patch,
  * 
  * This function blanks the debugging files at the beginning of the run. 
  * The reason we need to do this is because debugging file are _inefficient_
- * - we write to them continuously using the "a" (ie append) write option so
+ * as we write to them continuously using the "a" (ie append) write option so
  * that we don't have to keep a lot of potentially large arrays that we do not
  * need for non-debugging runs.  Essentially i/o (reading/writing from/to disk)
  * is inefficient so we want to avoid it as much as possible, but for debugging
