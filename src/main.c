@@ -945,6 +945,7 @@ int main(int argc,char *argv[]){
         be drawn between each gender/age/risk groups in one time step given this current population
         distribution (This allows checking that partnerships are drawn preferentially with similar
         age/risk groups) */
+
         reinitialize_arrays_to_default(0, patch, overall_partnerships, output);
         check_draw_number_partnership(patch, 0);
 
@@ -966,11 +967,10 @@ int main(int argc,char *argv[]){
         
     } // else if SIMPLE_PARTNERSHIP_CHECK == 1
     
-    
     /*****************************************************/
     /*** FREEING MEMORY                                ***/
     /*****************************************************/
-    
+
     for(p = 0; p < NPATCHES; p++){
         for(i_run = 0; i_run < n_runs; i_run++){
             free(allrunparameters[p][i_run].chips_params);
@@ -978,25 +978,20 @@ int main(int argc,char *argv[]){
             free(allrunparameters[p][i_run].DHS_params);
         }
     }
-    
-    free_pop_memory(pop,allrunparameters);
+
+    free_pop_memory(pop, allrunparameters);
     free_output_memory(output);
     
-    /* The fitting data array is allocated separately so free it separately: */
-    for(p = 0; p < NPATCHES; p++){
-        free(fitting_data[p]);
-        
-        if(WRITE_CALIBRATION == 1){
+    if(WRITE_CALIBRATION == 1){
+        for(p = 0; p < NPATCHES; p++){
             free(calibration_output_filename[p]);
         }
     }
-    
     free(file_data_store);
     free(file_labels);
     
     /* Free patch memory last - need to free everything in patch first! .*/
     free_patch_memory(patch);
-    
     free_partnership_memory(overall_partnerships);
     free(overall_partnerships);
     
@@ -1009,7 +1004,6 @@ int main(int argc,char *argv[]){
     if(argc <= 4){
         free(output_file_directory);
     }
-    
     free(debug);
 
     /***** Free GSL rng memory *****/
