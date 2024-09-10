@@ -1,5 +1,7 @@
 # File to specify which file extensions or folders git shouldn't track
 
+docs
+
 # Mac-related files
 .DS_Store
 
