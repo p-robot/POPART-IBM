@@ -354,8 +354,7 @@ void alloc_pc_cohort_data(PC_cohort_data_struct **PC_cohort_data,
 /**************************************************************************//**
  * @brief Allocate memory for patch objects
  * 
- * @param overall_partnerships Pointer to a @ref all_partnerships object
- * of partnerships in the model
+ * @param patch Pointer to a @ref patch_struct object of a patch in the model
 *****************************************************************************/
 
 void alloc_patch_memoryv2(patch_struct *patch){
@@ -876,6 +875,7 @@ void alloc_partnership_memoryv2(all_partnerships *overall_partnerships){
 /**************************************************************************//**
  * @brief Free memory of data structures associated with patch objects
  * 
+ * @param param Parameters structure
  * @param individual_population Pointer to an array of @ref individual structures
  * that stores the population
  * @param n_population Pointer to a @ref population_size object
@@ -1182,7 +1182,8 @@ void allocate_fitting_data_memory(int n_fit, fitting_data_struct **fitting_data)
 /**************************************************************************//**
  * @brief Blanks memory used to in fitting data structures (not currently used)
  * 
- * @param output Pointer to the @ref fitting_data_struct object to be blanked
+ * @param fitting_data Pointer to the @ref fitting_data_struct object to 
+ * be blanked
 *****************************************************************************/
 
 void free_fitting_data_memory(fitting_data_struct *fitting_data){

@@ -130,7 +130,7 @@ void print_age_list(age_list_struct *age_list){
 /**************************************************************************//**
  * @brief Count number of alive men and women in a patch, update counters
  * @details The counts of number of males and females are returned in the 
- * objects @ref n_m_indiv and @ref n_f_indiv respectively.  This function 
+ * objects `n_m_indiv` and `n_f_indiv` respectively.  This function 
  * loops through individuals in the `individual` array of the 
  * @ref patch_struct object.  Used in @ref count_population_size_three_ways().
  * 
@@ -1423,7 +1423,7 @@ void write_cd4_at_seroconversion(individual *indiv, file_struct *file_data_store
  * 
  * @details Called in @ref hiv.c.
  * 
- * @param seeded_infected pointer to a @ref individual structure of the 
+ * @param seeded_infection pointer to a @ref individual structure of the 
  * individuals who seed the HIV epidemic
  * @param file_data_store pointer to a @ref file_struct structure of file
  * names/locations

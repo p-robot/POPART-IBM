@@ -1,6 +1,6 @@
 /**************************************************************************//**
  * @file debug.h
- * @brief Header fiel for functions used in debugging and validating the model
+ * @brief Header file for functions used in debugging and validating the model
 *****************************************************************************/
 
 #ifndef DEBUG_H_
