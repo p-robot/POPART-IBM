@@ -50,6 +50,18 @@ A basic [example](examples/example_101.py) illustrates how the parameter input f
 * The model will write all output files to the directory `inputdir/Output` (additional command-line arguments can adjust this).  
 * The output files written will depending upon which macros are set to 1 within the file [constants.h](src/constants.h) (those beginning `WRITE_*`).  
 
+### Folder structure
+
+```
+src/                 # Model C code
+   popart_ibm/       # Helper Python code for handling input parameters
+doc/                 # General documentation in Markdown files
+docs/                # Auto-generated code documentation using doxygen
+examples/            # Basic script for running the model
+tests/               # Testing files
+python/              # Help Python scripts for manipulating markdown documentation
+doxygen-awesome-css/ # Git submodule of CSS file for styling doxygen
+```
 
 Testing
 -------
