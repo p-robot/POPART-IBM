@@ -22,6 +22,8 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout master branch
         uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
       # Installs and runs doxygen using the runners shell
       - name: Install Doxygen
         run: sudo apt-get install -y doxygen;
