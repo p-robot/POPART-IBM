@@ -1,21 +1,7 @@
-/*  This file is part of the PopART IBM.
-
-    The PopART IBM is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    The PopART IBM is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with the PopART IBM.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-/* Contains potential fitting routines for PopART IBM.
- */
+/**************************************************************************//**
+ * @file fitting.c
+ * @brief Functions for fitting routines for the model (not currently used).
+ *****************************************************************************/
 
 #include "structures.h"
 #include "constants.h"
@@ -23,29 +9,18 @@
 #include "memory.h"
 #include "utilities.h"
 
-/* Functions in this file:
-    load_fitting_data()
-        loads in fitting data from a file called "fitting_data_processed.txt" in the parameter 
-        directory.
-    check_fitting_data()
-        checks that the fitting data lies within some fairly loose ranges.
- */
+
+/**************************************************************************//**
+ * @brief Load fitting data from a file called "fitting_data_processed.txt"
+ * in the parameter directory.
+ * @details This function is not currently used.  Load `n` time points of 
+ * fitting data, allocate memory for fitting_data[n], store fitting data.
+ * 
+ * @param file_directory Path to directory of parameters
+ ****************************************************************************/
 
 int load_fitting_data_n(char *file_directory){
-   /* Load n time points of fitting data, allocate memory for fitting_data[n], store fitting data.
-    
-    Parameters
-    ----------
-    file_directory : pointer to a char array
-        
-    
-    Returns
-    -------
-    n_fit : int
-        Number of time points of fitting data.
-    */
-    
-    /* Number of time points of data we fit to. */
+
     int n_fit; 
     FILE *fitting_file;
     char fitting_file_name[LONGSTRINGLENGTH];
@@ -76,24 +51,17 @@ int load_fitting_data_n(char *file_directory){
 }
 
 
+/**************************************************************************//**
+ * @brief Load fitting data from a file called "fitting_data_processed.txt"
+ * in the parameter directory.
+ * @details This function is not currently used.
+ * 
+ * @param file_directory Path to directory of parameters
+ * @param fitting_data Pointer to @ref fitting_data_struct
+ * @param n_fit Number of fitted data points
+ ****************************************************************************/
+
 void load_fitting_data(char *file_directory, fitting_data_struct *fitting_data, int n_fit){
-    /*
-    
-    
-    Parameters
-    ----------
-    file_directory : pointer to a char array
-    fitting_data : pointer to a fitting_data_struct structure
-    n_fit : int
-        Number of fitted data points
-    
-    Returns
-    -------
-    Nothing
-    
-    */
-    
-    
     int i;
     FILE *fitting_file;
     char fitting_file_name[LONGSTRINGLENGTH];
@@ -161,16 +129,15 @@ void load_fitting_data(char *file_directory, fitting_data_struct *fitting_data, 
 }
 
 
+/**************************************************************************//**
+ * @brief Check that fitting data lies within a range
+ * @details This function is not currently used.
+ * 
+ * @param fitting_data Pointer to @ref fitting_data_struct
+ * @param n_fit Number of fitted data points
+ ****************************************************************************/
+
 void check_fitting_data(fitting_data_struct *fitting_data, int n_fit){
-    
-    /* 
-    Parameters
-    ----------
-    
-    fitting_data : pointer to a fitting_data_struct stucture
-    n_fit : int
-    
-    */
     
     int i;
     for(i = 0; i < n_fit; i++){
@@ -208,17 +175,32 @@ void check_fitting_data(fitting_data_struct *fitting_data, int n_fit){
 }
 
 
+/**************************************************************************//**
+ * @brief Check that fitting data lies within a range
+ * 
+ * @details Function does the following:\n
+ * 1. Checks if there are any fitting criteria left to address\n
+ * 2. If there are checks if there are any at the current timestep 
+ * (there can be more than 1 condition per timestep - e.g. PC data may 
+ * be fitted by age x sex etc.\n
+ * At present only set up to work with prevalence data.\n
+ * 3. Calculate overall HIV prevalence\n
+ * 4. Pass this to the function perform_target_fit() to actually do the fitting\n
+ * Note: at the moment it sits in a target-fitting like routine but can be modified.\n
+ * 5. Return values: If all (target-fitting) conditions are passed (if there are any)
+ * then return 1 else exit when the first non-fitted condition is encountered, 
+ * and return 0.
+ * 
+ * @param t0 Current year
+ * @param t_step Current time step
+ * @param fitting_data Pointer to @ref fitting_data_struct
+ * @param patch Pointer to @ref patch_struct
+ * @param p Index of patch
+ * 
+ * @return 0 if there are no fitting criteria left, 1 if there are.
+ ****************************************************************************/
+
 int fit_data(int t0, int t_step, fitting_data_struct *fitting_data, patch_struct *patch, int p){
-    
-   /* Function does the following:
-    * 1. Checks if there are any fitting criteria left
-    * 2. If there are checks if there are any at the current timestep (there can be more than 1 condition per timestep - e.g. PC data may be fitted by age x sex etc.
-    * NB AT PRESENT THIS IS SET UP JUST TO WORK WITH OVERALL PREVALENCE - CAN BE EASILY TWEAKED LATER FOR OTHER GROUPS.
-    * 3. Calculate overall HIV prevalence
-    * 4. Pass this to the function perform_target_fit() to actually do the fitting - at the moment it sits in a target-fitting like routine but can be modified.
-    * 5. Return values: If all (target-fitting) conditions are passed (if there are any) then return 1 else exit when the first non-fitted condition is encountered, and return 0.
-    */
-    
     
     double this_fit;
     int g, r, aa, ai_npopulation, ai_positive;
@@ -384,21 +366,13 @@ int fit_data(int t0, int t_step, fitting_data_struct *fitting_data, patch_struct
 }
 
 
+/**************************************************************************//**
+ * @brief Check how close prevalence is to a point estimate given a range
+ * @return Function returns the number of multiples of the lower 
+ * (if below the point est) or upper CI that fit was away from the point estimate.
+ ****************************************************************************/
+
 double perform_target_fit(fitting_data_struct *thisfittingdata, double model_prev){
-   /* Check how close prevalence is to a point estimate given some upper and lower limits.
-    
-    Function returns the number of multiples of the lower (if below the point est) or upper CI that
-    you are away.
-    
-    Parameters
-    ----------
-    thisfittingdata : pointer to a fitting_data_struct structure
-    model_prev : double
-    
-    Returns
-    -------
-    
-    */
     
     if(model_prev < thisfittingdata->prevalence_point_est){
         double sigma_ll = thisfittingdata->prevalence_point_est - thisfittingdata->prevalence_ll;
