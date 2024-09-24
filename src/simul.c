@@ -1,23 +1,7 @@
-/*  This file is part of the PopART IBM.
-
-    The PopART IBM is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    The PopART IBM is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with the PopART IBM.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-
-/************************************************************************/
-/******************************* Includes  ******************************/
-/************************************************************************/
+/**************************************************************************//**
+ * @file simul.c
+ * @brief Overarching iteration functions for running the model.
+*****************************************************************************/
 
 #include "simul.h"
 #include "demographics.h"
@@ -32,54 +16,30 @@
 #include "output.h"
 #include "pc.h"
 
-/************************************************************************/
-/******************************** functions *****************************/
-/************************************************************************/
 
-
-/*
-Functions within this file: 
-
-carry_out_processes()
-    Function that is called by the main() function within main.c.  
-carry_out_partnership_processes_by_time_step()
-    Carry out processes associated with partnership dissolution (non-death related), partnership
-    formation and HIV acquisition between serodiscordant partnerships.  
-carry_out_processes_by_patch_by_time_step()
-    
-*/
-
+/**************************************************************************//**
+ * @brief Main processes to be carried out
+ * 
+ * @details Called from @ref main.c
+ * 
+ * @param t0 year
+ * @param fitting_data pointer to fitting_data_struct structure
+ * @param patch pointer to an array of patch_struct
+ * @param overall_partnerships pointer to an array of all_partnerships structures
+ * @param output pointer to an array of output_struct
+ * @param rng_seed_offset Seed offset for the random number generator
+ * @param rng_seed_offset_PC Seed offset for random number generator for PC sampling
+ * @param debug pointer to a debug_struct
+ * @param file_data_store pointer to a file_struct
+ * @param is_counterfactual Indicator for whether the counterfactual is being run or not (1 Yes, 0 No)
+ * 
+ * @return 0 if the run should be terminated early, 1 otherwise
+ *****************************************************************************/
 
 int carry_out_processes(int t0, fitting_data_struct *fitting_data, patch_struct *patch,
-    all_partnerships * overall_partnerships, output_struct *output, int rng_seed_offset, 
+    all_partnerships *overall_partnerships, output_struct *output, int rng_seed_offset, 
     int rng_seed_offset_PC, debug_struct *debug, file_struct *file_data_store, 
     int is_counterfactual){
-    /* Main function for carrying out 
-    
-    
-    Arguments
-    ---------
-    
-    t0 : int
-    fitting_data : pointer to fitting_data_struct structure
-    patch : pointer to an array of patch_struct
-    overall_partnerships : pointer to an array of all_partnerships structures
-    output : pointer to an array of output_struct
-    rng_seed_offset : int
-        Offset for the integer used to seed the random number generator in GSL
-    rng_seed_offset_PC : int
-        Offset for the integer used to seed the random number generator in GSL used for PC sampling
-    debug : pointer to a debug_struct
-    file_data_store : pointer to a file_struct
-    is_counterfactual : int
-        Indicator for whether the counterfactual is being run or not (1 Yes, 0 No)
-    
-    
-    Returns
-    -------
-    Integer; 
-    
-    */
     
     int p, t_step, fit_flag;
     int icd4, i, r;
@@ -259,33 +219,27 @@ int carry_out_processes(int t0, fitting_data_struct *fitting_data, patch_struct 
 }
 
 
+/**************************************************************************//**
+ * @brief Carry out processes associated with partnership dissolution 
+ * (non-death related), partnership formation and HIV acquisition between 
+ * serodiscordant partnerships.  
+ * 
+ * @details Called for each time step in the model.  This is a "high-level" 
+ * function, in that is mainly calls other others to update the above processes.
+ * This function is called by @ref carry_out_processes.
+ * 
+ * @param t_step Time step
+ * @param t0 Year
+ * @param patch pointer to a patch_struct structure
+ * @param overall_partnerships pointer to a all_partnerships structure
+ * @param output pointer to a output_struct structure
+ * @param debug pointer to a debug_struct structure
+ * @param file_data_store pointer to a file_struct structure
+ *****************************************************************************/
+
 void carry_out_partnership_processes_by_time_step(int t_step, int t0, patch_struct *patch,
     all_partnerships * overall_partnerships, output_struct *output, debug_struct *debug,
     file_struct *file_data_store){
-    /* Carry out processes associated with partnership dissolution (non-death related), partnership
-    formation and HIV acquisition between serodiscordant partnerships.  
-    
-    This is a "high-level" function, in that is mainly calls other others to update the above 
-    processes.  This function is called by carry_out_processes().  
-    
-    
-    Arguments
-    ---------
-    t_step : int
-    t0 : int
-    patch : pointer to a patch_struct structure
-    overall_partnerships : pointer to a all_partnerships structure
-    output : pointer to a output_struct structure
-    debug : pointer to a debug_struct structure
-    file_data_store : pointer to a file_struct structure
-    
-    
-    Returns
-    -------
-    Nothing
-    
-    */
-    
     
     long k;
     double t;
@@ -365,54 +319,43 @@ void carry_out_partnership_processes_by_time_step(int t_step, int t0, patch_stru
 }
 
 
+/**************************************************************************//**
+ * @brief Carry out processes associated within each patch per time step
+ * 
+ * @details This function calls a range of processes used in the simulation.  
+ * In the following order, this function calls the following processes:\n
+ * 1. Set up PC sample\n
+ * 2. Set up CHiPs sample\n
+ * 3. HIV testing\n
+ * 4. Births and deaths\n
+ * 5. HIV introduction\n
+ * 6. HIV events\n
+ * 7. HIV care cascade events\n
+ * 8. Carry out PC visits (if necessary)\n
+ * 9. PopART intervention (or post-trial TasP)\n
+ * 10. Carry out VMMC events
+ * @param t_step Current time step
+ * @param t0 Current year
+ * @param fitting_data pointer to a fitting_data_struct structure
+ * @param patch pointer to a patch_struct structure
+ * @param p Patch number (indexed from zero)
+ * @param overall_partnerships pointer to an @ref all_partnerships structure
+ * @param output pointer to a @ref output_struct structure
+ * @param rng_seed_offset Offset for the integer used to seed the random number generator
+ * @param rng_seed_offset_PC Offset for the integer used to seed the random number generator 
+ * used for the PC sampling
+ * @param debug pointer to a @ref debug_struct structure
+ * @param file_data_store pointer to a @ref file_struct structure
+ * @param is_counterfactual Indicator of whether this is for a counterfactual run or not.
+ * This is used to determine when to run the CHiPs intervention.
+ * 
+ * @return 0 if the run should be terminated early, 1 otherwise
+ *****************************************************************************/
+
 int carry_out_processes_by_patch_by_time_step(int t_step, int t0, fitting_data_struct *fitting_data,
         patch_struct *patch, int p, all_partnerships * overall_partnerships, output_struct *output,
         int rng_seed_offset, int rng_seed_offset_PC, debug_struct *debug, 
         file_struct *file_data_store, int is_counterfactual){
-    /* This function calls a range of processes used in the simulation
-    
-    In the following order, this function calls the following processes: 
-        1. Set up PC sample
-        2. Set up CHiPs sample
-        3. HIV testing
-        4. Births and deaths
-        5. HIV introduction
-        6. HIV events
-        7. HIV care cascade events
-        8. Carry out PC visits (if necessary)
-        9. PopART intervention (or post-trial TasP)
-        10. Carry out VMMC events
-    
-    Arguments
-    --------
-    t_step : int
-        
-    t0 : int
-        
-    fitting_data : pointer to a fitting_data_struct structure
-        
-    patch : pointer to a patch_struct structure
-        
-    p : int
-        Patch number (indexed from zero)
-    overall_partnerships : pointer to a all_partnerships structure
-        
-    output : pointer to a output_struct structure
-        
-    rng_seed_offset : int
-        Offset for the integer used to seed the random number generator
-    rng_seed_offset_PC : int
-        Offset for the integer used to seed the random number generator used for the PC sampling
-    debug : pointer to a debug_struct structure
-        
-    file_data_store : pointer to a file_struct structure
-        
-    is_counterfactual : int
-        Indicator of whether this is for a counterfactual run or not.  This is used to determine
-        when to run the CHiPs intervention.  
-    
-    */
-    
     int chips_round ,pc_round, pc_enrolment_round, chips_start_timestep;
     double t;
     int aa, ai, g;
