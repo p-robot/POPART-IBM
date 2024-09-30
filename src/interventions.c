@@ -1,98 +1,42 @@
-/*  This file is part of the PopART IBM.
-    
-    The PopART IBM is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    
-    The PopART IBM is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a copy of the GNU General Public License
-    along with the PopART IBM.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-/* 
-Functions related to PopART/CHiPs:
-create_popart_chips_samples()
-    at the start of a PopART year, decide who will be visited by CHiPs and in what order.
-schedule_chips_visits()
-    decide how many of these people  will be visited each timestep.
-carry_out_chips_visits_per_timestep()
-    goes through the list of people being visited by CHiPs and sets up their next cascade event 
-    accordingly (HIV test, CD4 test).
-chips_visit_person()
-    
-
-Functions related to circumcision:
-draw_if_VMMC()
-    Decides if an individual will get VMMC, and if they do, calls schedule_vmmc() to schedule 
-    circumcision for a future timestep in vmmc_events[].  
-schedule_vmmc()
-    Adds an event for circumcision to vmmc_events[] to schedule an individual to get circumcised in
-    future.
-schedule_vmmc_healing()
-    Adds an event for someone to finish healing after a VMMC op to vmmc_events[].
-finish_vmmc_healing()
-    Updates a person's status when they have finished healing after a VMMC op. At this point they
-    have no further VMMC events happening to them.
-schedule_generic_vmmc_event()
-    Does the actual adding of a VMMC event to vmmc_event[] - function is called by schedule_vmmc 
-    and schedule_vmmc_healing.
-carry_out_VMMC_events_per_timestep()
-    Carry out any event associated with VMMC in the current time step.  
- */
-
-/************************************************************************/
-/******************************* Includes  ******************************/
-/************************************************************************/
+/**************************************************************************//**
+ * @file interventions.c
+ * @brief Functions related to PopART/CHiPs interventions
+ *****************************************************************************/
 
 #include "interventions.h"
 #include "structures.h"
 #include "constants.h"
 #include "hiv.h"
 
-/************************************************************************/
-/******************************** functions *****************************/
-/************************************************************************/
 
+/**************************************************************************//**
+ * @brief At the start of PopART round, decide which individuals will be 
+ * visited by CHiPs and in what order they will be visited.
+ * 
+ * @details This takes the population of currently alive people (using age_list)
+ * and firstly sub-divides them into a 'chips_sampling_frame', e.g. dividing
+ * up men and women, as CHiPs tends to visit more women than men.  We can 
+ * also exclude certain people (e.g. <15 years old) as needed.  The sampling
+ * frame is then drawn from to pick chips_sample->size_n_m men and 
+ * chips_sample->size_n_f women who will be the people visited in the year.
+ * We then shuffle each of these lists, so the shuffled list will be the order
+ * in which people are visited.  Finally we call schedule_chips_visits()
+ * which sets the number of people to be visited in each timestep so that
+ * the total number of people visited in a year adds up to the correct total.
+ * NOTE: The way we divide up the population means that we may try to visit
+ * people who died during the year.  However, this should not be a big factor,
+ * and I think it may even mimic CHiPs in that people may move/die between
+ * enumeration/mapping and CHiPs visit. 
+ * 
+ * @param age_list pointer to @ref age_list_struct structure
+ * @param chips_sample pointer to @ref chips_sample_struct structure
+ * @param param pointer to @ref parameters structure
+ * @param chips_round CHiPs round of interest
+ * @param p Patch index
+*****************************************************************************/
 
 void create_popart_chips_samples(age_list_struct *age_list, chips_sample_struct *chips_sample, 
     parameters *param, int chips_round, int p){
-    
-    /*
-    This takes the population of currently alive people (using age_list) and firstly sub-divides
-    them into a 'chips_sampling_frame', e.g. dividing up men and women, as CHiPs tends to visit
-    more women than men.  We can also exclude certain people (e.g. <15 years old) as needed.  The
-    sampling frame is then drawn from to pick chips_sample->size_n_m men and chips_sample->size_n_f
-    women who will be the people visited in the year.  We then shuffle each of these lists, so the
-    shuffled list will be the order in which people are visited.  Finally we call
-    schedule_chips_visits() which sets the number of people to be visited in each timestep so that
-    the total number of people visited in a year adds up to the correct total.
-    
-    NOTE: The way we divide up the population means that we may try to visit people who died during
-    the year.  However, this should not be a big factor, and I think it may even mimic CHiPs in
-    that people may move/die between enumeration/mapping and CHiPs visit. 
-    
-    Arguments
-    ----------
-    age_list : pointer to age_list_struct structure
-        
-    chips_sample : pointer to chips_sample_struct structure
-        
-    param : pointer to parameters structure
-        Parameters structure
-    chips_round : int
-        CHiPs round of interest
-    p : int
-        Patch number
-    
-    Returns
-    -------
-    
-    */
     int g;
     int aa, ai,i, ac;
     /* For use with FOLLOW_INDIVIDUAL - we store these the first time we find them so we can find 
@@ -257,30 +201,22 @@ void create_popart_chips_samples(age_list_struct *age_list, chips_sample_struct 
 }
 
 
+/**************************************************************************//**
+ * @brief Decide how many of these people  will be visited each timestep
+ * 
+ * @details Given a sample of people who are to be visited each year 
+ * (currently chips_sample->m and chips_sample->f) schedule their visits 
+ * in the arrays chips_sample->number_to_see_per_timestep_m/f.  These arrays
+ * contain the number of people to see at each timestep, and we run through
+ * e.g. chips_sample->m until we have seen that many people each timestep.
+ * 
+ * @param chips_sample pointer to a @ref chips_sample_struct struct
+ * @param param pointer to a @ref parameters struct containing all the
+ * parameters of interest for the patch in question.
+ * @param chips_round CHiPs round of interest
+*****************************************************************************/
+
 void schedule_chips_visits(chips_sample_struct *chips_sample, parameters *param, int chips_round){
-   /* Given a sample of people who are to be visited each year (currently chips_sample->m and
-    chips_sample->f) schedule their visits in the arrays
-    chips_sample->number_to_see_per_timestep_m/f.  These arrays contain the number of people to see
-    at each timestep, and we run through e.g. chips_sample->m until we have seen that many people
-    each timestep.  
-    
-    
-    Arguments
-    ---------
-    chips_sample : pointer to a chips_sample_struct struct
-    param : pointer to a parameters struct
-        All the parameters of interest for the patch in question.  
-    chips_round : int
-        CHiPs round of interest
-    
-    Returns
-    -------
-    Nothing; 
-    
-    */
-    
-    
-    
     int g,ac;
     double temp_chips_expected_cumulative_proportion_visited = 0;
     double temp_chips_expected_cumulative_number_visited = 0;
@@ -387,30 +323,24 @@ void schedule_chips_visits(chips_sample_struct *chips_sample, parameters *param,
 }
 
 
-/*************************** Functions which do the CHiPs visits: ************************/
+/**************************************************************************//**
+ * @brief Carry out the CHiPS visits for a given timestep at time t
+ * 
+ * @details This function goes through the list of people being visited by 
+ * CHiPs and sets up their next cascade event accordingly (HIV test, CD4 test).
+ * 
+ * @param t0 Current year
+ * @param t_step Current time step
+ * @param patch @ref patch_struct struct
+ * @param p Patch index
+ * @param chips_round CHiPs round in question
+ * @param debug pointer to a @ref debug_struct struct
+ * @param output pointer to an @ref output_struct struct
+*****************************************************************************/
 
-
-void carry_out_chips_visits_per_timestep(int t0, int t_step, patch_struct *patch, int p, 
+void carry_out_chips_visits_per_timestep(int t0, int t_step, patch_struct *patch, int p,
         int chips_round, debug_struct *debug, output_struct *output){
-    /* Carry out the CHiPS visits for a given timestep at time t. 
-    
-    Arguments
-    ---------
-    t0 : int
-    t_step : int
-    patch : patch_struct struct
-    p : int
-        Patch identifier.  
-    chips_round : int
-        CHiPs round in question
-    debug : pointer to a debug_struct struct
-    output : pointer to an output_struct struct
-    
-    Returns
-    -------
-    Nothing; 
-    */
-    long i;  
+    long i;
     int g,ac;
     int n_steps_in_round;
     if(chips_round >= 0 && chips_round < NCHIPSROUNDS){
@@ -518,46 +448,46 @@ void carry_out_chips_visits_per_timestep(int t0, int t_step, patch_struct *patch
 }
 
 
+/**************************************************************************//**
+ * @brief Carry out a CHiPs visit on an individual person
+ * 
+ * @details Because of the way we draw CHiPs visits at the beginning of the 
+ * year, it is possible some people die before they are visited. If this is
+ * the case then do nothing more.  They are deleted from age_list so won't
+ * be in next year's sample.
+ * 
+ * @param indiv @ref individual person being visited by a CHiPs
+ * @param cumulative_outputs @ref cumulative_outputs_struct keeping track of
+ * cumulative number of visits and tests
+ * @param calendar_outputs structure for keeping track of events within 
+ * a calendar year (struct @ref calendar_outputs_struct)
+ * @param t Current time
+ * @param cascade_events Array of individuals with scheduled cascade events
+ * @param n_cascade_events Number of cascade events in current time step
+ * @param size_cascade_events Size of cascade events array
+ * @param hiv_pos_progression Array of individuals with HIV progression events
+ * @param n_hiv_pos_progression Number of HIV progression events this time step
+ * @param size_hiv_pos_progression Size of HIV progression events
+ * @param param A @ref parameters structure
+ * @param vmmc_events Array of individuals with VMMC events
+ * @param n_vmmc_events Number of VMMC events this time step
+ * @param size_vmmc_events Size of VMMC events this time step
+ * @param patch Patch structure
+ * @param p Patch index
+ * @param chips_round Current CHiPs round
+ * @param debug Structure of type @ref debug_struct used for debugging
+ * @param output Structure for output files
+ * @param g Gender of individual having a CHiPs visit (see @ref N_GENDER)
+ * @param ac Age group of individual having a CHiPs visit (see @ref MAX_AGE 
+ * and @ref AGE_CHIPS)
+*****************************************************************************/
+
 void chips_visit_person(individual *indiv, cumulative_outputs_struct *cumulative_outputs,
     calendar_outputs_struct *calendar_outputs, double t, individual ***cascade_events, 
     long *n_cascade_events, long *size_cascade_events, individual ***hiv_pos_progression, 
     long *n_hiv_pos_progression, long *size_hiv_pos_progression, parameters *param, 
     individual ***vmmc_events, long *n_vmmc_events, long *size_vmmc_events, patch_struct *patch,
     int p, int chips_round, debug_struct *debug, output_struct *output, int g, int ac){
-    /* 
-    Because of the way we draw CHiPs visits at the beginning of the year, it is possible some people
-    die before they are visited. If this is the case then do nothing more. 
-    They are deleted from age_list so won't be in next year's sample. 
-    
-    
-    Arguments
-    ---------
-    individual *indiv
-    cumulative_outputs_struct *cumulative_outputs
-    double tindividual ***cascade_events
-    long *n_cascade_events
-    long *size_cascade_events
-    individual ***hiv_pos_progression
-    long *n_hiv_pos_progression
-    long *size_hiv_pos_progression
-    parameters *param
-    individual ***vmmc_events
-    long *n_vmmc_events
-    long *size_vmmc_events
-    patch_struct *patch
-    int p
-    int chips_round
-    debug_struct *debug
-    output_struct *output
-    int g
-    int ac
-    
-    
-    Returns
-    -------
-    Nothing;
-    
-    */
     
     /* We need a different variable as chips_round_including_end_trial is used as an array index. */
     int chips_round_including_end_trial;
@@ -801,13 +731,30 @@ void chips_visit_person(individual *indiv, cumulative_outputs_struct *cumulative
 }
 
 
-/******************************************************************************************
- * These are VMMC intervention events - VMMC can either be through PopART or national 
- * policy/campaigns.
- ******************************************************************************************/
-/* Determines if a man gets VMMC, and if so schedules the process: 
- * ASSUMPTION!!! - time is drawn with no data!!! */
-void draw_if_VMMC(individual *indiv, parameters *param, individual ***vmmc_events, long *n_vmmc_events, long *size_vmmc_events, double t, int is_popart){
+/**************************************************************************//**
+ * @brief Function decides if an individual will get VMMC, and if they do,
+ * calls schedule_vmmc() to schedule circumcision for a future timestep in
+ * vmmc_events[].
+ * 
+ * @details These are VMMC intervention events.  VMMC can be scheduled either
+ * through PopART or national policy/campaigns.  Note that time is drawn with 
+ * no data.
+ * 
+ * @param indiv Individual being scheduled for VMMC
+ * @param param Parameters structure
+ * @param vmmc_events Array of individuals with scheduled events related 
+ * to VMMC
+ * @param n_vmmc_events Number of VMMC events scheduled in the array @ref 
+ * vmmc_events
+ * @param size_vmmc_events Size of VMMC events
+ * @param t Time at which the individual should be scheduled for the 
+ * VMMC event
+ * @param is_popart Is the process scheduling this VMMC through PopART?
+ * (See @ref POPART)
+*****************************************************************************/
+
+void draw_if_VMMC(individual *indiv, parameters *param, individual ***vmmc_events, 
+        long *n_vmmc_events, long *size_vmmc_events, double t, int is_popart){
     double p_circ;
     int year, t_step, chips_round;
 
@@ -858,15 +805,35 @@ void draw_if_VMMC(individual *indiv, parameters *param, individual ***vmmc_event
     }
 }
 
-/* Function is called when a person has just had a -ve HIV test, and decides to get VMMC at some time in the future.
- * The function determines when in the future the person will get VMMC and schedules this in vmmc_events[]. */
+
+/**************************************************************************//**
+ * @brief Add event for circumcision to vmmc_events[] to schedule an
+ * individual to get circumcised in the future
+ * 
+ * @details Function is called when a person has just had a HIV-negative 
+ * HIV test, and decides to get VMMC at some time in the future.  The 
+ * function determines when in the future the person will get VMMC and
+ * schedules this in vmmc_events[].
+ * 
+ * @param indiv An @ref individual being scheduled for a future VMMC
+ * @param param Structure of parameters
+ * @param vmmc_events Array of individuals scheduled for future VMMC events
+ * @param n_vmmc_events Number of VMMC events within the array `vmmc_events`
+ * @param size_vmmc_events Size of VMMC events
+ * @param t Time at which VMMC event is to be scheduled
+ * @param is_popart Is the process scheduling this VMMC through PopART?
+ * (See @ref POPART)
+*****************************************************************************/
+
 void schedule_vmmc(individual *indiv, parameters *param, individual ***vmmc_events, 
         long *n_vmmc_events, long *size_vmmc_events, double t, int is_popart){
 
     /* For DEBUGGING: */
-    if (indiv->gender==FEMALE||(indiv->circ!=UNCIRC)) 
-    {
-        printf("ERROR: not sure why this person %ld gender=%d with circ=%d is in schedule_VMMC. Exiting\n",indiv->id,indiv->gender,indiv->circ);
+    if (indiv->gender==FEMALE||(indiv->circ!=UNCIRC)){
+        printf("ERROR: not sure why this person %ld gender=%d with circ=%d is in schedule_VMMC. Exiting\n",
+            indiv->id,
+            indiv->gender,
+            indiv->circ);
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
@@ -877,41 +844,41 @@ void schedule_vmmc(individual *indiv, parameters *param, individual ***vmmc_even
     //printf("Individual %ld had been scheduled for VMMC at t=%f for future time %f, is_popart=%d\n",indiv->id,t,time_vmmc,is_popart);
     /* Set status to waiting for VMMC: */
     indiv->circ = UNCIRC_WAITING_VMMC;
-    schedule_generic_vmmc_event(indiv,param,vmmc_events,n_vmmc_events,size_vmmc_events,t,time_vmmc);
-    /* Do we need to model people deciding more than once if they get VMMC? */
+    schedule_generic_vmmc_event(indiv, param,vmmc_events, n_vmmc_events, size_vmmc_events, t, time_vmmc);
     return;
 }
 
 
+/**************************************************************************//**
+ * @brief Add event for someone to finish healing after a VMMC procedure
+ * to the array `vmmc_events[]`.
+ * 
+ * @details This function determines time between VMMC operation and healing,
+ * and schedules a healing event.  This function is called when the VMMC
+ * operation is performed.  The healing event for the person in question
+ * is added to vmmc_events[], a time to healing is generated, and the
+ * individual's circ status is set to VMMC_HEALING.
+ * 
+ * @param indiv pointer to an individual struct of the person who is 
+ * to have a VMMC healing event scheduled.
+ * @param param pointer to a @ref parameter struct
+ * @param vmmc_events multidimensional array of pointers to individual struct
+ * of those with VMMC events scheduled
+ * @param n_vmmc_events Array (of length @ref N_TIME_STEP_PER_YEAR; see 
+ * @ref constants.h for def) of the number of VMMC events in a given
+ * time step for the current year.
+ * @param size_vmmc_events Size of VMMC events array
+ * @param t Current time in years
+*****************************************************************************/
+
 void schedule_vmmc_healing(individual *indiv, parameters *param, individual ***vmmc_events, 
     long *n_vmmc_events, long *size_vmmc_events, double t){
-    /* Determine time between VMMC operation and healing, and schedules a healing event.
-    
-    This function is called when the VMMC operation is performed.   The healing event for the person
-    in question is added to vmmc_events[], a time to healing is generated, and the individual's
-    circ status is set to VMMC_HEALING.
-    
-    Arguments
-    ---------
-    indiv : pointer to an individual struct
-    param : pointer to a parameter struct
-    vmmc_events : multidimensional array of pointers to individual struct
-    n_vmmc_events : array of long
-        Array (of length N_TIME_STEP_PER_YEAR; see constants.h for def) of the number of VMMC events
-        in a given time step for the current year.  
-    size_vmmc_events : array of long
-    t : double
-        Current time in years.  
-    
-    Returns
-    -------
-    Nothing; a time to healing is drawn and schedule_generic_vmmc_event() is called.  
-    */
     
     /* If the individual is female or they are not waiting for VMMC, throw and error */
     if(indiv->gender == FEMALE || (indiv->circ != UNCIRC_WAITING_VMMC)){
         printf("ERROR: not sure why this person %ld ", indiv->id);
-        printf("gender=%d with circ=%d is in schedule_vmmc_healing.  ", indiv->gender, indiv->circ);
+        printf("gender=%d with circ=%d is in schedule_vmmc_healing.  ",
+            indiv->gender, indiv->circ);
         printf("Exiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
@@ -925,59 +892,63 @@ void schedule_vmmc_healing(individual *indiv, parameters *param, individual ***v
     indiv->t_vmmc = t;
     
     //printf("Scheduling healing for %ld at time %lf for future time %lf\n",indiv->id,t,time_heal);
-    schedule_generic_vmmc_event(indiv, param, vmmc_events, n_vmmc_events, size_vmmc_events, 
-        t, time_heal);
+    schedule_generic_vmmc_event(indiv, param, vmmc_events, 
+        n_vmmc_events, size_vmmc_events, t, time_heal);
     return;
 }
 
+/**************************************************************************//**
+ * @brief Update a person's status when they have finished healing after a 
+ * VMMC procedure, afrer which they have no further VMMC events schedule
+ * 
+ * @details Once someone has reached the end of the VMMC healing period,
+ * this function is called.  Function sets the individual so they no longer
+ * have any VMMC event, and their circ status is "VMMC".  The healing period
+ * is set within @ref parameters (see attribute `t_vmmc_healing`)
+ * 
+ * @param indiv The individual who is finishing the VMMC healing process
+*****************************************************************************/
 
-/* Once someone has reached the end of the VMMC healing period, this function is called.
- * Function sets the individual so they no longer have any VMMC event, and their circ status is "VMMC". */
 void finish_vmmc_healing(individual *indiv){
-    
     /* For DEBUGGING: */
-        if (indiv->gender==FEMALE||(indiv->circ!=VMMC_HEALING)) 
-        {
-            printf("ERROR: not sure why this person %ld gender=%d with circ=%d is in finish_vmmc_healing. Exiting\n",indiv->id,indiv->gender,indiv->circ);
+        if (indiv->gender==FEMALE||(indiv->circ!=VMMC_HEALING)){
+            printf("ERROR: not sure why this person %ld gender=%d with circ=%d is in finish_vmmc_healing. Exiting\n",
+                indiv->id,indiv->gender,indiv->circ);
             printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
             fflush(stdout);
             exit(1);
         }
         
     indiv->circ = VMMC;
-    /* Do not need to remove from vmmc_events[] array as this event is now in the past. */
+    // Do not need to remove from vmmc_events[]
+    // array as this event is now in the past.
     indiv->idx_vmmc_event[0] = -1;
     indiv->idx_vmmc_event[1] = -1;
     return;
 }
 
 
+/**************************************************************************//**
+ * @brief Add a VMMC event to `vmmc_event[]`
+ * 
+ * @details This function is called by schedule_vmmc and schedule_vmmc_healing.
+ * Adds a VMMC event to the array vmmc_event[][] for an individual `indiv` at
+ * time `t_event`.
+ * This function adds a VMMC event to the array vmmc_event for the time step
+ * at which it occurs in the future, `t_step_vmmc_event`.  This function is
+ * called by schedule_vmmc() and schedule_vmmc_healing().
+ * 
+ * @param indiv Individual for which the VMMC event is to be scheduled.
+ * @param param pointer to a @ref parameters struct
+ * @param vmmc_events Array of individuals with future VMMC events
+ * @param n_vmmc_events Number of individuals in above array of individuals
+ * @param size_vmmc_events Size of array above (for memory management)
+ * @param t Current time
+ * @param t_event Time of VMMC event (in the future)
+*****************************************************************************/
+
 void schedule_generic_vmmc_event(individual *indiv, parameters *param, individual ***vmmc_events,
     long *n_vmmc_events, long *size_vmmc_events, double t, double t_event){
-    /*
-    Add a VMMC event to the array vmmc_event[][] for an individual `indiv` at time `t_event`.  
-    
-    This function adds a VMMC event to the array vmmc_event for the time step at which it occurs in 
-    the future, `t_step_vmmc_event`.  This function is called by schedule_vmmc() and
-    schedule_vmmc_healing().
-    
-    Arguments
-    ---------
-    indiv : pointer to individual struct
-        Individual for which the VMMC event is to be scheduled.  
-    param : pointer to a parameters struct
-    vmmc_events : 
-    n_vmmc_events : array of long
-    size_vmmc_events : array of long
-    t : double
-        Current time in years
-    t_event : double
-        Time in years at which the VMMC event is to take place.  
-    
-    Returns
-    -------
-    Nothing.  
-    */
     
     /* Check the VMMC event doesn't happen before the end of the simulation */
     if (t_event <= param->end_time_simul){
@@ -1070,26 +1041,18 @@ void schedule_generic_vmmc_event(individual *indiv, parameters *param, individua
 }
 
 
+/**************************************************************************//**
+ * @brief Carry out any event associated with VMMC in the current time step
+ * 
+ * @param Current time step (used to index the `patch[p].vmmc_events` and 
+ * `patch[p].n_vmmc_events`)
+ * @param t Current time in years.
+ * @param patch pointer to a @ref patch_struct structure housing information
+ * on each patch.
+ * @param p Patch index (generally 0 or 1)
+*****************************************************************************/
+
 void carry_out_VMMC_events_per_timestep(int t_step, double t, patch_struct *patch, int p){
-    /*Carry out any event associated with VMMC in the current time step
-    
-    
-    Arguments
-    ---------
-    t_step : int
-        Current time step (used to index the patch[p].vmmc_events and patch[p].n_vmmc_events)
-    t : double
-        Current time in years.  
-    patch : pointer to an array of patch_struct structures
-        The array of patch_struct objects that house information on patches.  See structures.h for 
-        a list of attributes that these objects have.  
-    p : int
-        Patch identifier (generally 0 or 1).  
-    
-    Returns
-    -------
-    Nothing; carries out VMMC events on individuals for which they are scheduled.  
-    */
     
     /* For debugging: */
     if(t_step < 0 || t_step >= N_TIME_STEP_PER_YEAR){
