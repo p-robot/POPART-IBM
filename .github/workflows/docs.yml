@@ -27,6 +27,8 @@ jobs:
       # Installs and runs doxygen using the runners shell
       - name: Install Doxygen
         run: sudo apt-get install -y doxygen;
+      - name: Install graphviz
+        run: sudo apt-get install -y graphviz;
       - name: Run Doxygen
         run: (cd src; doxygen Doxyfile)
       # Move files so that GH can see index.html
