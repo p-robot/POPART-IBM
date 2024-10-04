@@ -12,15 +12,15 @@
 /**************************************************************************//**
  * @brief Call all other functions that read in parameters from file
  * 
+ * @details Nothing, other functions for reading parameters are called and 
+ * different structures are populated.
+ * 
  * @param file_directory Name of dir where parameter files 
  *   ("param_processed*.csv") are stored.
  * @param param Pointer to a parameters struct, in which to store parameter 
  *   values for each simulation run.
  * @param n_runs Number of runs of the simulation to be performed
  * @param patch The (mainly empty) @ref patch_struct structure
- * 
- * @return Nothing, other functions for reading parameters are called and 
- * different structures are populated.
  *****************************************************************************/
 
 void read_param(char *file_directory, parameters **param, int n_runs, patch_struct *patch){
@@ -75,12 +75,12 @@ void read_param(char *file_directory, parameters **param, int n_runs, patch_stru
  * Note that trial_arm can be overwritten later on if we are in a counterfactual 
  * scenario (`is_counterfactual = 1`).
  * 
+ * Nothing is returned from this function, values are read from file and 
+ * stored within attributes of the patch structure.
+ * 
  * @param file_directory Name of directory where parameter files 
  *  (`param_processed*.csv`) are stored.
  * @param patch The patch structure (a @ref patch_struct)
- * 
- * @return Nothing, values are read from file and stored within attributes 
- *  of the patch structure.
  *****************************************************************************/
 
 void read_patch_info(char *file_directory, patch_struct *patch){
@@ -162,8 +162,6 @@ void read_patch_info(char *file_directory, patch_struct *patch){
  * @param allrunparameters pointer to an array of @ref parameters structures, 
  * one for each simulation run (`n_runs`)
  * @param n_runs Number of runs in the simulation
- * 
- * @return Nothing, values are read in and saved to the parameters structure.
  *****************************************************************************/
 
 void read_demographic_params(char *patch_tag, parameters *allrunparameters, int n_runs){
@@ -320,8 +318,6 @@ void read_demographic_params(char *patch_tag, parameters *allrunparameters, int 
 one for each simulation run (n_runs)
  * @param n_runs Number of runs of the simulation
  * @param p Patch number
- * 
- * @return Nothing
  *****************************************************************************/
 
 void read_hiv_params(char *patch_tag, parameters *allrunparameters, int n_runs, int p){
@@ -542,8 +538,6 @@ void read_hiv_params(char *patch_tag, parameters *allrunparameters, int n_runs, 
  * @param allrunparameters pointer to an array of parameters structure 
  *     for storing all parameter values
  * @param n_runs Number of runs in the simulation
- * 
- * @return Nothing
  *****************************************************************************/
 
 void read_partnership_params(char *patch_tag, parameters *allrunparameters, int n_runs){
@@ -717,12 +711,13 @@ void read_partnership_params(char *patch_tag, parameters *allrunparameters, int 
 /**************************************************************************//**
  * @brief Read time related parameters
  * 
+ * @details Nothing returned; the argument allrunparameters structure is 
+ * populated (a @ref parameters structure)
+ * 
  * @param patch_tag Pointer to a character array of the patch tag
  * @param allrunparameters Pointer to an array of @ref parameters structure for storing all parameter values
  * @param n_runs Number of simulation runs
  * @param p Patch number
- * 
- * @return Nothing; the argument allrunparameters structure is populated (a @ref parameters structure)
  *****************************************************************************/
 
 void read_time_params(char *patch_tag, parameters *allrunparameters, int n_runs, int p){
@@ -1258,8 +1253,6 @@ void read_cascade_params(char *patch_tag, parameters *allrunparameters, int n_ru
  * 
  * @param patch_tag Pointer to a char of the patch tag
  * @param allrunparameters pointer to an array of @ref parameters structs
- * 
- * @return Nothing, this function populates `parameters->chips_params->prop_tested_by_chips_in_round`
  *****************************************************************************/
 
 void read_chips_uptake_params(char *patch_tag, parameters *allrunparameters){
@@ -1572,8 +1565,6 @@ void read_pc0_enrolment_params(char *patch_tag, int community_id, parameters *al
  * @param allrunparameters Pointer to an array of @ref parameters structure
  *  for storing all parameter values
  * @param n_runs Number of simulations
- * 
- * @return Nothing
  ****************************************************************************/
 
 void copy_pc_params( parameters **allrunparameters, int n_runs){
@@ -1681,8 +1672,6 @@ void read_pc_future_params(char *patch_tag, parameters *allrunparameters, int n_
  * @param patch_tag Pointer to name of the dir where the parameter file is stored
  * @param allrunparameters Pointer to an array of @ref parameters structure for storing all parameter values
  * @param n_runs Number of runs of the simulation
- * 
- * @return Nothing; reads in parameter values and populates a parameters struct
  *****************************************************************************/
 
 void read_initial_params(char *patch_tag, parameters *allrunparameters, int n_runs){
