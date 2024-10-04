@@ -744,8 +744,8 @@ void chips_visit_person(individual *indiv, cumulative_outputs_struct *cumulative
  * @param param Parameters structure
  * @param vmmc_events Array of individuals with scheduled events related 
  * to VMMC
- * @param n_vmmc_events Number of VMMC events scheduled in the array @ref 
- * vmmc_events
+ * @param n_vmmc_events Number of VMMC events scheduled in the array 
+ * `vmmc_events`
  * @param size_vmmc_events Size of VMMC events
  * @param t Time at which the individual should be scheduled for the 
  * VMMC event
@@ -861,7 +861,7 @@ void schedule_vmmc(individual *indiv, parameters *param, individual ***vmmc_even
  * 
  * @param indiv pointer to an individual struct of the person who is 
  * to have a VMMC healing event scheduled.
- * @param param pointer to a @ref parameter struct
+ * @param param pointer to a @ref parameters struct
  * @param vmmc_events multidimensional array of pointers to individual struct
  * of those with VMMC events scheduled
  * @param n_vmmc_events Array (of length @ref N_TIME_STEP_PER_YEAR; see 
@@ -1044,7 +1044,7 @@ void schedule_generic_vmmc_event(individual *indiv, parameters *param, individua
 /**************************************************************************//**
  * @brief Carry out any event associated with VMMC in the current time step
  * 
- * @param Current time step (used to index the `patch[p].vmmc_events` and 
+ * @param t_step Current time step (used to index the `patch[p].vmmc_events` and 
  * `patch[p].n_vmmc_events`)
  * @param t Current time in years.
  * @param patch pointer to a @ref patch_struct structure housing information
