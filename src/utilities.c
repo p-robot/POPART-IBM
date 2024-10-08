@@ -1,47 +1,24 @@
-/*  This file is part of the PopART IBM.
+/**************************************************************************//**
+ * @file utilities.c
+ * @brief Helper functions for running the model
+*****************************************************************************/
 
-    The PopART IBM is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    The PopART IBM is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with the PopART IBM.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-/* Useful functions for model
- *
- */
-
-
-/************************************************************************/
-/******************************* Includes  ******************************/
-/************************************************************************/
 
 #include "utilities.h"
 #include "constants.h"
 #include "init.h"
 
 
-/* These are the functions in this file:
- * check_if_cannot_read_param() - prints a simple error message that we cannot find a given parameter.
- * print_here() - used as a simple debugging output, printing an integer.
- * print_here_string() - a slightly more sophisticated version of print_here() which can print a string too.
- * etc etc... to be filled in later on!
- * add_commas_to_calibration_output()
- *
- */
+/**************************************************************************//**
+ * @brief Print an error message if a parameter cannot be found on input
+ * 
+ * @details Used in input.c and fitting.c to check the return value from 
+ * fscanf
+ * 
+ * @param checkreadok Return value from `fscanf`
+ * @param varname Variable name that is expected to be read
+ *****************************************************************************/
 
-/************************************************************************/
-/******************************** functions *****************************/
-/************************************************************************/
-
-/* Used in input.c and fitting.c to check the return value from fscanf. */
 void check_if_cannot_read_param(int checkreadok, char *varname){
     if (checkreadok<1){
         printf("ERROR: Parameter %s not read. Exiting\n",varname);
@@ -51,10 +28,25 @@ void check_if_cannot_read_param(int checkreadok, char *varname){
     }
 }
 
+
+/**************************************************************************//**
+ * @brief Print an integer
+ * @details Used in debugging
+ * @param n Integer to print to `stdout`
+ *****************************************************************************/
+
 void print_here(int n){
     printf("Here %i\n",n);
     fflush(stdout);
 }
+
+
+/**************************************************************************//**
+ * @brief Print an integer and string
+ * @details Used in debugging
+ * @param s Character string to print to `stdout`
+ * @param n Integer to print to `stdout`
+ *****************************************************************************/
 
 void print_here_string(char *s,int n){
     printf("Here %s %i\n",s,n);
@@ -62,42 +54,62 @@ void print_here_string(char *s,int n){
 }
 
 
-void check_age_group_index(age_list_struct *age_list, int g, long person_id,int indextocheck){
-    int i,j,aitrue;
+/**************************************************************************//**
+ * @brief Check the age group an individual has been allocated to matches the 
+ * expected age group index
+ * 
+ * @param age_list Array storing individual IDs of particular age groups
+ * @param g Person's gender
+ * @param person_id ID of the individual in question
+ * @param indextocheck Expected age group index of the individual in question
+ *****************************************************************************/
+
+void check_age_group_index(age_list_struct *age_list, int g, 
+        long person_id, int indextocheck){
+    int i, j, aitrue;
     aitrue=-1; /* Assign dummy value. */
-    for (i=0;i<(MAX_AGE-AGE_ADULT);i++){
-        for (j=0;j<age_list->age_list_by_gender[g]->number_per_age_group[i];j++){
-            if (age_list->age_list_by_gender[g]->age_group[i][j]->id==person_id)
+    for(i=0;i<(MAX_AGE-AGE_ADULT);i++){
+        for(j=0; j<age_list->age_list_by_gender[g]->number_per_age_group[i]; j++){
+            if(age_list->age_list_by_gender[g]->age_group[i][j]->id==person_id)
                 aitrue = i;
         }
     }
-    if (aitrue==-1){
+    if(aitrue==-1){
         printf("Person not found in check_age_group_index()\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (indextocheck!=aitrue){
-        printf("Index for person %li does not match %i %i\n",person_id,indextocheck,aitrue);
+    if(indextocheck!=aitrue){
+        printf("Index for person %li does not match %i %i\n",
+            person_id, indextocheck, aitrue);
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-
 }
 
 
-/* Function not currently used. */
+/**************************************************************************//**
+ * @brief Normalise four values in place
+ * 
+ * @details The values themselves are changed in place to a normalised value
+ * e.g. `new_p1 = p1/(p1 + p2 + p3 + p4)`.  If the denominator is zero or
+ * less than zero then 0.25 is returned for all values (this shouldn't happen).
+ * @param p1 First value
+ * @param p2 Second value
+ * @param p3 Third value
+ * @param p4 Fourth value
+ *****************************************************************************/
+
 void normalise_four_quantities(double *p1, double *p2, double *p3, double *p4){
     double normalization = *p1 + *p2 + *p3 + *p4;
-    if (normalization>0){
+    if(normalization>0){
         *p1 = *p1/normalization;
         *p2 = *p2/normalization;
         *p3 = *p3/normalization;
         *p4 = *p4/normalization;
-    }
-    // We don't use an else statement - hopefully
-    else{
+    }else{
         printf("Not normalizing %f %f %f %f\n",*p1,*p2,*p3,*p4);
         *p1 = 0.25;
         *p2 = 0.25;
@@ -106,14 +118,31 @@ void normalise_four_quantities(double *p1, double *p2, double *p3, double *p4){
     }
 }
 
-/* Gives cumulative sums. Note we do not output a fourth var c4 as this is assumed ot be 1.
- * Not currently used. */
-void cumulative_four_quantities(double p1, double p2, double p3, double p4, double *c1, double *c2, double *c3, double *c4){
+
+/**************************************************************************//**
+ * @brief Calculate cumulative sums given four values
+ * 
+ * @details Four values are passed to the function, `p1, p2, p3, p4`, and 
+ * cumulative sums are assigned to the other passed pointers, `c1, c2, c3, c4`
+ * e.g. `c1 = p1`, `c2 = p1+p2`, etc.
+ * 
+ * @param p1 First value with which to calculate cumulative sums
+ * @param p2 Second value with which to calculate cumulative sums
+ * @param p3 Third value with which to calculate cumulative sums
+ * @param p4 Fourth value with which to calculate cumulative sums
+ * @param c1 Pointer in which to store first cumulative sum (`p1`)
+ * @param c2 Pointer in which to store second cumulative sum (`p1+p2`)
+ * @param c3 Pointer in which to store second cumulative sum (`p1+p2+p3`)
+ * @param c4 Pointer in which to store second cumulative sum (`p1+p2+p3+p4`)
+ *****************************************************************************/
+
+void cumulative_four_quantities(double p1, double p2, double p3, double p4,
+        double *c1, double *c2, double *c3, double *c4){
     *c1 = p1;
     *c2 = *c1+p2;
     *c3 = *c2+p3;
     *c4 = *c3+p4;
-    if (fabs(*c4-1.0)>1e-12){
+    if(fabs(*c4-1.0)>1e-12){
         printf("ERROR: Cumulative total in cumulative_four_quantities() does not sum to 1. Exiting. \n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
@@ -122,300 +151,322 @@ void cumulative_four_quantities(double p1, double p2, double p3, double p4, doub
 }
 
 
+/**************************************************************************//**
+ * @brief Evaluate the upwards Hill function at point x
+ * 
+ * @details Used in the MTCT transmission function so this is not currently 
+ * used in the model.
+ * 
+ * @param x Point at which to evaluate the function
+ * @param max_val Max value parameters
+ * @param exponent Exponent parameter
+ * @param midpoint Midpoint parameter
+ * 
+ * @returns Returns the Hill function (up) evaluated at point x
+ *****************************************************************************/
+
 double hill_up(double x, double max_val, double exponent, double midpoint){
-    /* Evaluate the upwards Hill function at point x.  
-    
-    This is only used in the MTCT transmission function so this is not currently used.  
-    
-    Arguments
-    ---------
-    x : double
-        Point at which to evaluate the function
-    max_val : double
-        Max value parameters
-    exponent : double
-        Exponent parameter
-    midpoint : double
-        Midpoint parameter
-    
-    Returns
-    -------
-    Returns the Hill function (up) evaluated at point x (a double).  
-    */
     double result = max_val * (pow(x, exponent))/((pow(x, exponent) + pow(midpoint, exponent)));
     return result;
 }
 
 
+/**************************************************************************//**
+ * @brief Evaluate the downwards Hill function at point x
+ * 
+ * @details Used within @ref schedule_new_hiv_test() to determine mean time
+ * until HIV test is scheduled.
+ * 
+ * @param x Point at which to evaluate the function
+ * @param max_val Max value parameters
+ * @param exponent Exponent parameter
+ * @param midpoint Midpoint parameter
+ * 
+ * @returns Returns the Hill function (down) evaluated at point x
+ *****************************************************************************/
+
 double hill_down(double x, double max_val, double exponent, double midpoint){
-    /* Evaluate the downwards Hill function at point x.  
-    
-    Used within schedule_new_hiv_test() to determine mean time until HIV test is scheduled.  
-    
-    
-    Arguments
-    ---------
-    x : double
-        Point at which to evaluate the function
-    max_val : double
-        Max value parameters
-    exponent : double
-        Exponent parameter
-    midpoint : double
-        Midpoint parameter
-    
-    Returns
-    -------
-    Returns the Hill function (down) evaluated at point x (a double).  
-    
-    */
-    
     double result = max_val * (pow(midpoint, exponent))/((pow(x, exponent) + 
         pow(midpoint, exponent)));
     return result;
 }
 
 
-void calcul_population(population_size *pop, stratified_population_size *pop_strat){
-    /* This function fills in pop_strat based on pop */
+/**************************************************************************//**
+ * @brief Fills in counts of population stratified by several variables
+ * based upon the on full population structure
+ * 
+ * @details Uses the @ref population_size structure which is stratified by 
+ * age, gender, risk group and fills in attributes of a 
+ * @ref stratified_population_size structure that has population counts 
+ * disaggregated by one or two of these variables (age, gender, risk).
+ * 
+ * @param pop Population size counts in array by gender, age, risk
+ * @param pop_strat Structure of type @ref stratified_population_size that has
+ * several attributes stratifying the population by 1) gender and age, 2) gender
+ * and risk, 3) by gender, 4) total population size, 5) proportion of population
+ * by gender and risk.
+ *****************************************************************************/
 
+void calcul_population(population_size *pop, stratified_population_size *pop_strat){
     int g, ag, r;
 
-    /* summing populations */
-
-    for(g=0 ; g<N_GENDER ; g++)
-    {
+    // Reset counters
+    for(g=0; g<N_GENDER; g++){
         pop_strat->total_pop_size_per_gender[g] = 0;
-        for(r=0 ; r<N_RISK ; r++)
-        {
+        for(r=0 ; r<N_RISK ; r++){
             pop_strat->pop_size_per_gender_risk[g][r] = 0;
         }
     }
-
-    for(ag=0 ; ag<N_AGE ; ag++)
-    {
-        for(g=0 ; g<N_GENDER ; g++)
-        {
+    for(ag=0; ag<N_AGE; ag++){
+        for(g=0; g<N_GENDER; g++){
             pop_strat->pop_size_per_gender_age[g][ag] = 0;
         }
-        for(r=0 ; r<N_RISK ; r++)
-        {
+        for(r=0; r<N_RISK; r++){
             //pop_strat->pop_size_per_age_risk[ag][r] = pop->pop_size_per_gender_age_risk[FEMALE][ag][r] + pop->pop_size_per_gender_age_risk[MALE][ag][r];
-            for(g=0 ; g<N_GENDER ; g++)
-            {
+            for(g=0; g<N_GENDER; g++){
                 pop_strat->pop_size_per_gender_age[g][ag] += pop->pop_size_per_gender_age_risk[g][ag][r];
                 pop_strat->pop_size_per_gender_risk[g][r] += pop->pop_size_per_gender_age_risk[g][ag][r];
             }
         }
         //pop_strat->pop_size_per_age[ag] = pop_strat->pop_size_per_age_per_gender[FEMALE][ag] + pop_strat->pop_size_per_age_per_gender[MALE][ag];
-        for(g=0 ; g<N_GENDER ; g++)
-        {
+        for(g=0; g<N_GENDER; g++){
             pop_strat->total_pop_size_per_gender[g] += pop_strat->pop_size_per_gender_age[g][ag];
         }
     }
-
     pop_strat->total_pop_size = pop_strat->total_pop_size_per_gender[FEMALE] + pop_strat->total_pop_size_per_gender[MALE];
-
-
-    for(r=0 ; r<N_RISK ; r++)
-    {
+    for(r=0; r<N_RISK; r++){
         //pop_strat->pop_size_per_risk[r] = pop_strat->pop_size_per_risk_per_gender[FEMALE][r] + pop_strat->pop_size_per_risk_per_gender[MALE][r];
-        for(g=0 ; g<N_GENDER ; g++)
-        {
+        for(g=0; g<N_GENDER; g++){
             pop_strat->prop_pop_per_gender_risk[g][r] = (double)pop_strat->pop_size_per_gender_risk[g][r]/(double)pop_strat->total_pop_size_per_gender[g];
         }
     }
-
 }
 
-void calcul_pop_wider_age_groups(population_size *pop, population_size_one_year_age *pop_one_year){
-    /* This function fills in pop based on pop_one_year */
 
+/**************************************************************************//**
+ * @brief Resets population counter and updates based on `pop_one_year`
+ * 
+ * @details The structure @ref population_size is set to zero and refilled
+ * using the @ref population_size_one_year_age structure.
+ * 
+ * @param pop Population size structure, stratified by gender, age, risk
+ * @param pop_one_year Population size structure, stratified by gender, 
+ * one year age groups, risk
+ *****************************************************************************/
+
+void calcul_pop_wider_age_groups(population_size *pop, 
+        population_size_one_year_age *pop_one_year){
+    
     set_population_count_zero(pop);
-    int total_pop = 0;
+    //int total_pop = 0;
     int g, aa, ai, ag, r;
-    for(ag=0 ; ag<N_AGE ; ag++)
-    {
-        for(aa=AGE_GROUPS_WITH_OLD[ag]- AGE_ADULT ; aa<AGE_GROUPS_WITH_OLD[ag+1]- AGE_ADULT ; aa++)
-        {
-            ai = pop_one_year->youngest_age_group_index + aa ; // ai is the index of the array age_list->number_per_age_group of the age group of people you want to be dead
+    for(ag=0 ; ag<N_AGE ; ag++){
+        for(aa=AGE_GROUPS_WITH_OLD[ag]- AGE_ADULT ; aa<AGE_GROUPS_WITH_OLD[ag+1]- AGE_ADULT ; aa++){
+            // ai is the index of the array age_list->number_per_age_group of the age group of people you want to be dead
+            ai = pop_one_year->youngest_age_group_index + aa ;
             while (ai>(MAX_AGE-AGE_ADULT-1))
                 ai = ai - (MAX_AGE-AGE_ADULT);
-            for(r=0 ; r<N_RISK ; r++)
-            {
-                for(g=0 ; g<N_GENDER ; g++)
-                {
+            for(r=0 ; r<N_RISK ; r++){
+                for(g=0 ; g<N_GENDER ; g++){
                     pop->pop_size_per_gender_age_risk[g][ag][r] += pop_one_year->pop_size_per_gender_age1_risk[g][ai][r];
-                    total_pop+=pop_one_year->pop_size_per_gender_age1_risk[g][ai][r];
+                    //total_pop+=pop_one_year->pop_size_per_gender_age1_risk[g][ai][r];
                 }
             }
-
         }
     }
 
     for(r=0 ; r<N_RISK ; r++){
         for(g=0 ; g<N_GENDER ; g++){
             pop->pop_size_per_gender_age_risk[g][N_AGE-1][r] += pop_one_year->pop_size_oldest_age_group_gender_risk[g][r];
-            total_pop+=pop_one_year->pop_size_oldest_age_group_gender_risk[g][r];
+            //total_pop+=pop_one_year->pop_size_oldest_age_group_gender_risk[g][r];
         }
     }
-    //printf("total pop counted in calcul_pop_wider_age_groups() is %i\n",total_pop);
 }
 
-void calcul_prevalence(proportion_population_size *prevalence, population_size *pop, population_size *n_infected_wide_age_group, population_size_one_year_age *n_infected){
-    /* This function fills in prevalence based on pop and n_infected (through calculation of n_infected_wide_age_group)*/
+
+/**************************************************************************//**
+ * @brief Calculate HIV prevalence based upon pop and n_infected 
+ * (through calculation of n_infected_wide_age_group)
+ * 
+ * @param prevalence Structure that records proportions on the population,
+ * stratified by gender, age group, risk group (such as HIV prevalence)
+ * @param pop Population structure, stratified by gender, age, risk
+ * @param n_infected_wide_age_group Number infected, stratified by gender, 
+ * age, risk
+ * @param n_infected Number infected, stratified by gender, one-year-age groups,
+ * risk group
+ *****************************************************************************/
+
+void calcul_prevalence(proportion_population_size *prevalence, population_size *pop,
+        population_size *n_infected_wide_age_group, population_size_one_year_age *n_infected){
 
     calcul_pop_wider_age_groups(n_infected_wide_age_group, n_infected);
-
     int g, ag, r;
-    for(g=0 ; g<N_GENDER ; g++)
-    {
-        for (ag=0; ag<N_AGE; ag++)
-        {
-            for(r=0 ; r<N_RISK ; r++)
-            {
-                prevalence->prop_size_per_gender_age_risk[g][ag][r] = n_infected_wide_age_group->pop_size_per_gender_age_risk[g][ag][r] / pop->pop_size_per_gender_age_risk[g][ag][r];
+    for(g=0 ; g<N_GENDER ; g++){
+        for (ag=0; ag<N_AGE; ag++){
+            for(r=0 ; r<N_RISK ; r++){
+                prevalence->prop_size_per_gender_age_risk[g][ag][r] = 
+                    n_infected_wide_age_group->pop_size_per_gender_age_risk[g][ag][r] / pop->pop_size_per_gender_age_risk[g][ag][r];
             }
         }
     }
 }
 
 
-void print_prevalence(population_size *pop, population_size *n_infected_wide_age_group, population_size_one_year_age *n_infected){
-    /* This prints prevalence based on pop and n_infected*/
+/**************************************************************************//**
+ * @brief Print prevalence based upon pop and n_infected
+ * 
+ * @param pop Population structure, stratified by gender, age, risk
+ * @param n_infected_wide_age_group Number HIV infected individuals, 
+ * stratified by gender, age, risk
+ * @param n_infected Number infected, stratified by gender, one-year-age groups,
+ * risk group
+ *****************************************************************************/
 
+void print_prevalence(population_size *pop, population_size *n_infected_wide_age_group,
+        population_size_one_year_age *n_infected){
+    
     calcul_pop_wider_age_groups(n_infected_wide_age_group, n_infected);
-
     int g, ag, r;
-    for(g=0 ; g<N_GENDER ; g++)
-    {
+    for(g=0 ; g<N_GENDER ; g++){
         if(g==0) printf("MALES\n"); else printf("FEMALES\n");
-        for (ag=0; ag<N_AGE; ag++)
-        {
+        for (ag=0; ag<N_AGE; ag++){
             printf("age group %d\n",ag);
-            for(r=0 ; r<N_RISK ; r++)
-            {
-                printf("risk group %d: prevalence = %lg\t", r, ((double) n_infected_wide_age_group->pop_size_per_gender_age_risk[g][ag][r]) / ( (double) pop->pop_size_per_gender_age_risk[g][ag][r]));
+            for(r=0 ; r<N_RISK ; r++){
+                printf("risk group %d: prevalence = %lg\t", r, 
+                    ((double) n_infected_wide_age_group->pop_size_per_gender_age_risk[g][ag][r]) / ( (double) pop->pop_size_per_gender_age_risk[g][ag][r]));
             }
             printf("\n");
         }
     }
-
     fflush(stdout);
 }
 
 
-void calcul_p_risk(int g, double p_risk[N_RISK][N_RISK], stratified_population_size *pop_strat, parameters *param){
-    /* This fills in p_risk, so that p_risk[r,.] is the distribution over risk groups of sexual partners
-     * of someone of gender g in risk group r.*/
+/**************************************************************************//**
+ * @brief Fill in distribution of sexual partners over risk groups
+ * 
+ * @details Fills in `p_risk`, so that `p_risk[r,.]` is the distribution over 
+ * risk groups of sexual partners of someone of gender `g` in risk group `r`.
+ * 
+ * @param g Gender of person of interest
+ * @param p_risk Array to be filled in with distribution of sexual partners
+ * over risk groups
+ * @param pop_strat Structure holding information on population sizes and 
+ * proportion of population in each gender and risk group
+ * @param param Parameters structure, must have `assortativity` attribute
+ *****************************************************************************/
+
+void calcul_p_risk(int g, double p_risk[N_RISK][N_RISK], 
+        stratified_population_size *pop_strat, parameters *param){
     int i,j;
-    //// I think it might be (slightly?) quicker to loop from j=0..N_RISK-1 and then add the extra param->assortativity outside the loop.
-    for(i=0 ; i<N_RISK ; i++)
-    {
+    for(i=0 ; i<N_RISK ; i++){
         p_risk[i][i] = param->assortativity + (1-param->assortativity)*pop_strat->prop_pop_per_gender_risk[1-g][i];
-        for(j=0 ; j<i ; j++)
-        {
+        for(j=0 ; j<i ; j++){
             p_risk[i][j] = (1-param->assortativity)*pop_strat->prop_pop_per_gender_risk[1-g][j];
         }
-        for(j=i+1 ; j<N_RISK ; j++)
-        {
+        for(j=i+1 ; j<N_RISK ; j++){
             p_risk[i][j] = (1-param->assortativity)*pop_strat->prop_pop_per_gender_risk[1-g][j];
         }
     }
 }
 
+
+/**************************************************************************//**
+ * @brief Calculate the "desired" number of new partners for females per age 
+ * and risk group
+ * 
+ * @details The number of new partnerships within a time step between female 
+ * ages `ag_f` risk `r_f` and males aged `ag_m` risk `r_m`, as desired by the 
+ * females is the following product: \n
+ * TIME STEP x \n
+ * Number females in that group x \n
+ * rate of new partners for females in that age group x\n 
+ * relative rate for females in that risk group x\n
+ * proportion of new male partners within a certain age category ag_m x\n 
+ * proportion of new male partners within a certain risk category r_m
+ * 
+ * @param patch Patch object
+ * @param param Parameters object
+ * @param patch_f Patch index of women in question
+ * @param patch_m Patch index of men in question
+ *****************************************************************************/
 
 void calcul_n_new_partners_f_to_m(patch_struct *patch, parameters *param, int patch_f, int patch_m){
     int ag_f, ag_m ; /* indexes of ages for females and males */
     int r_f, r_m ; /* indexes of risk groups for females and males */
 
     /* Fills in p_risk_f */
-    calcul_p_risk(FEMALE, param->p_risk_per_gender[FEMALE], patch[patch_f].n_population_stratified, param);
-
-
-    /* Standardizes the relative number of new partners per risk group */
-    //standardize_relative_number_partnerships_per_risk(FEMALE, param->xi_per_gender[FEMALE], patch[patch_f].n_population_stratified, param);
+    calcul_p_risk(FEMALE, param->p_risk_per_gender[FEMALE], 
+        patch[patch_f].n_population_stratified, param);
 
     /* Calculates the "desired" number of new partners for females per age and risk group */
-    for(ag_f=0 ; ag_f<N_AGE ; ag_f++)
-    {
-        for(r_f=0 ; r_f<N_RISK ; r_f++)
-        {
-            for(ag_m=0 ; ag_m<N_AGE ; ag_m++)
-            {
-                for(r_m=0 ; r_m<N_RISK ; r_m++)
-                {
-                    //printf("ag_f = %d \t r_f = %d \t ag_m = %d \t r_m = %d \n", ag_f,r_f,ag_m,r_m);
-                    //fflush(stdout);
-                    if(patch_f==patch_m)
-                    {
+    for(ag_f=0 ; ag_f<N_AGE ; ag_f++){
+        for(r_f=0 ; r_f<N_RISK ; r_f++){
+            for(ag_m=0 ; ag_m<N_AGE ; ag_m++){
+                for(r_m=0 ; r_m<N_RISK ; r_m++){
+                    if(patch_f==patch_m){
                         param->unbalanced_nb_f_to_m[ag_f][r_f][ag_m][r_m] = TIME_STEP*patch[patch_f].n_population->pop_size_per_gender_age_risk[FEMALE][ag_f][r_f]*param->c_per_gender_within_patch[FEMALE][ag_f]*param->relative_number_partnerships_per_risk[r_f]*param->p_age_per_gender[FEMALE][ag_f][ag_m]*param->p_risk_per_gender[FEMALE][r_f][r_m];
-                    }else
-                    {
+                    }else{
                         param->unbalanced_nb_f_to_m[ag_f][r_f][ag_m][r_m] = TIME_STEP*patch[patch_f].n_population->pop_size_per_gender_age_risk[FEMALE][ag_f][r_f]*param->c_per_gender_between_patches[FEMALE][ag_f]*param->relative_number_partnerships_per_risk[r_f]*param->p_age_per_gender[FEMALE][ag_f][ag_m]*param->p_risk_per_gender[FEMALE][r_f][r_m];
                     }
-                    /* In English this means that the number of new partnerships within a time step between female ages ag_f risk r_f and males aged ag_m risk r_m,
-                     * as desired by the females
-                     * is the following product:
-                     * TIME STEP x Number females in that group x rate of new partners for females in that age group x relative rate for females in that risk group
-                     *           x proportion of new male partners within a certain age category ag_m
-                     *           x proportion of new male partners within a certain risk category r_m */
                 }
             }
-
         }
     }
 }
 
+
+/**************************************************************************//**
+ * @brief Calculate the "desired" number of new partners for males per age 
+ * and risk group
+ * @param patch Patch object
+ * @param param Parameters object
+ * @param patch_f Patch index of women in question
+ * @param patch_m Patch index of men in question
+ *****************************************************************************/
 
 void calcul_n_new_partners_m_to_f(patch_struct *patch, parameters *param, int patch_f, int patch_m){
     int ag_f, ag_m ; /* indexes of ages for females and males */
     int r_f, r_m ; /* indexes of risk groups for females and males */
 
     /* Fills in p_risk_m */
-    calcul_p_risk(MALE, param->p_risk_per_gender[MALE], patch[patch_m].n_population_stratified, param);
-
-    /* Standardizes the relative number of new partners per risk group */
-    //standardize_relative_number_partnerships_per_risk(MALE, param->xi_per_gender[MALE], patch[patch_m].n_population_stratified, param);
-
+    calcul_p_risk(MALE, param->p_risk_per_gender[MALE], 
+        patch[patch_m].n_population_stratified, param);
 
     /* Calculates the "desired" number of new partners for males per age and risk group */
-    for(ag_f=0 ; ag_f<N_AGE ; ag_f++)
-    {
-        for(r_f=0 ; r_f<N_RISK ; r_f++)
-        {
-            for(ag_m=0 ; ag_m<N_AGE ; ag_m++)
-            {
-                for(r_m=0 ; r_m<N_RISK ; r_m++)
-                {
-                    if(patch_f==patch_m)
-                    {
+    for(ag_f=0 ; ag_f<N_AGE ; ag_f++){
+        for(r_f=0 ; r_f<N_RISK ; r_f++){
+            for(ag_m=0 ; ag_m<N_AGE ; ag_m++){
+                for(r_m=0 ; r_m<N_RISK ; r_m++){
+                    if(patch_f==patch_m){
                         param->unbalanced_nb_m_to_f[ag_m][r_m][ag_f][r_f] = TIME_STEP*patch[patch_m].n_population->pop_size_per_gender_age_risk[MALE][ag_m][r_m]*param->c_per_gender_within_patch[MALE][ag_m]*param->relative_number_partnerships_per_risk[r_m]*param->p_age_per_gender[MALE][ag_m][ag_f]*param->p_risk_per_gender[MALE][r_m][r_f];
-                    }else
-                    {
+                    }else{
                         param->unbalanced_nb_m_to_f[ag_m][r_m][ag_f][r_f] = TIME_STEP*patch[patch_m].n_population->pop_size_per_gender_age_risk[MALE][ag_m][r_m]*param->c_per_gender_between_patches[MALE][ag_m]*param->relative_number_partnerships_per_risk[r_m]*param->p_age_per_gender[MALE][ag_m][ag_f]*param->p_risk_per_gender[MALE][r_m][r_f];
                     }
                 }
             }
-
         }
     }
 }
 
-/* this fills in balanced_nb_f_to_m with the balanced number of
- * new partnerships between a female of age ag_f, risk r_f and a male of age ag_m, risk r_m over a time unit */
-void balance_contacts_arithmetic(parameters *param)
-{
+
+/**************************************************************************//**
+ * @brief Fill in `balanced_nb_f_to_m` with the balanced number of new 
+ * partnerships between a female of age `ag_f`, risk `r_f` and a male of age 
+ * `ag_m`, risk `r_m` over a time unit
+ * 
+ * @param param Parameters object
+ *****************************************************************************/
+
+void balance_contacts_arithmetic(parameters *param){
     int ag_f, ag_m,r_f, r_m;
     double tmp;
-    for(ag_f=0 ; ag_f<N_AGE ; ag_f++)
-    {
-        for(r_f=0 ; r_f<N_RISK ; r_f++)
-        {
-            for(ag_m=0 ; ag_m<N_AGE ; ag_m++)
-            {
-                for(r_m=0 ; r_m<N_RISK ; r_m++)
-                {
+    for(ag_f=0 ; ag_f<N_AGE ; ag_f++){
+        for(r_f=0 ; r_f<N_RISK ; r_f++){
+            for(ag_m=0 ; ag_m<N_AGE ; ag_m++){
+                for(r_m=0 ; r_m<N_RISK ; r_m++){
                     tmp = (1-param->prop_compromise_from_males) * param->unbalanced_nb_f_to_m[ag_f][r_f][ag_m][r_m] + param->prop_compromise_from_males * param->unbalanced_nb_m_to_f[ag_m][r_m][ag_f][r_f];
                     param->balanced_nb_f_to_m[ag_f][r_f][ag_m][r_m] = (long int) floor (tmp);
                     param->balanced_nb_f_to_m[ag_f][r_f][ag_m][r_m] += gsl_ran_bernoulli (rng, tmp - floor(tmp)); /* Bernoulli trial with probability tmp - floor(tmp) */
@@ -425,109 +476,119 @@ void balance_contacts_arithmetic(parameters *param)
     }
 }
 
-int are_in_partnership(individual *indiv1, individual *indiv2)
-{
-    int res = 0;
-    int i;
 
-    for(i=0 ; i<indiv1->n_partners ; i++)
-    {
-        if(indiv1->partner_pairs[i]->ptr[1-indiv1->gender]->id==indiv2->id)
-        {
-            res = 1;
+/**************************************************************************//**
+ * @brief Check if two individuals are currently in a partnership
+ * 
+ * @details Checks all of the partners of individual 1 (i.e. in attribute 
+ * `partner_pairs`) to see if individual 2 is present in the list.
+ * 
+ * @param indiv1 Individual 1
+ * @param indiv2 Individual 2
+ * @returns @ref TRUE if individual 2 is present in the list of partners of individual 1
+ * else @ref FALSE
+ *****************************************************************************/
+
+int are_in_partnership(individual *indiv1, individual *indiv2){
+    int res = FALSE;
+    int i;
+    for(i=0 ; i<indiv1->n_partners ; i++){
+        if(indiv1->partner_pairs[i]->ptr[1-indiv1->gender]->id==indiv2->id){
+            res = TRUE;
             break;
         }
     }
-
     return(res);
 }
 
-int has_free_partnership(individual *indiv)
-{
+
+/**************************************************************************//**
+ * @brief Check if an individual has space for any additional partnerships
+ * 
+ * @details Compares the attributes `n_partners` (number of current partners)
+ * and `max_n_partners` of individual in question.
+ * 
+ * @param indiv Individual of interest
+ * @returns Boolean of whether individual has free partnerships
+ *****************************************************************************/
+
+int has_free_partnership(individual *indiv){
     return(indiv->n_partners < indiv->max_n_partners);
 }
 
-/* is idx_new_partners_m[current_idx] equal to any of the other idx_new_partners_m[k]? */
-int is_already_selected(long *idx_new_partners_m, long current_idx, long n_partners_m)
-{
+
+/**************************************************************************//**
+ * @brief Check if `idx_new_partners_m[current_idx]` is equal to any of the 
+ * other `idx_new_partners_m[k]`?
+ * 
+ * @param idx_new_partners_m Array of new partners
+ * @param current_idx Current index of partner of interest
+ * @param n_partners_m Number of partners
+ * 
+ * @returns @ref TRUE if condition is met, else @ref FALSE
+ *****************************************************************************/
+
+int is_already_selected(long *idx_new_partners_m, long current_idx, long n_partners_m){
     long k;
 
     k = current_idx;
-    if(k < n_partners_m - 1)
-    {
+    if(k < n_partners_m - 1){
         do
         {
             k++;
         }while((k < n_partners_m - 1) && (idx_new_partners_m[current_idx] != idx_new_partners_m[k]));
-    }else
-    {
+    }else{
         k = 0;
     }
 
-    if(idx_new_partners_m[current_idx] != idx_new_partners_m[k])
-    {
-        if(current_idx >0)
-        {
+    if(idx_new_partners_m[current_idx] != idx_new_partners_m[k]){
+        if(current_idx >0){
             k = current_idx - 1;
-            while( (idx_new_partners_m[current_idx] != idx_new_partners_m[k]) && (k > 0))
-            {
+            while( (idx_new_partners_m[current_idx] != idx_new_partners_m[k]) && (k > 0)){
                 k--;
             }
         }
     }
-
-    if(idx_new_partners_m[current_idx] != idx_new_partners_m[k])
-    {
-        //printf("Answer = %d\n",0);
-        //fflush(stdout);
-        return(0);
-    }else
-    {
-        //printf("Answer = %d\n",1);
-        //fflush(stdout);
-        return(1);
+    if(idx_new_partners_m[current_idx] != idx_new_partners_m[k]){
+        return(FALSE);
+    }else{
+        return(TRUE);
     }
-
 }
 
 
+/**************************************************************************//**
+ * @brief Copy an array of long integers
+ * 
+ * @param dest Pointer to destination array
+ * @param orig Pointer to source/origin array
+ * @param size Length of the array `orig` to be copied
+ *****************************************************************************/
+
 void copy_array_long(long *dest, long *orig, long size){
-    /* Copy an array of long integers
-    
-    Arguments
-    ---------
-    dest, orig : pointer to array of long integers
-        orig is the array to be copied and dest is the location of the array in which to copy orig.
-    
-    size : long
-        Length of the array orig to be copied
-    */
     int k;
-    
     for(k = 0; k < size ; k++){
         dest[k] = orig[k];
     }
 }
 
 
+/**************************************************************************//**
+ * @brief Determine if a partnership is serodiscordant
+ * 
+ * @details This function returns 1 if partnership is serodiscordant (ie one 
+ * individual is HIV-positive and one is HIV-negative in a partnership) and 0
+ * if seroconcordant (i.e. +/+ or -/-).  The check finds the sum and product 
+ * of the two serostatuses.  If the sum is >0 (so at least one is HIV-positive)
+ * and the product is zero (so at least one is HIV-negative) then the 
+ * partnership is serodiscordant.
+ * 
+ * @param pair The partnership to test for serodiscordance
+ * 
+ * @returns 1 if the partnership is serodiscordant; zero otherwise
+ *****************************************************************************/
+
 int is_serodiscordant(partnership *pair){
-    /* Determine if a partnership is serodiscordant or not
-    
-    This function returns 1 if partnership is serodiscordant (ie 1 HIV+ and 1 HIV- partner) and 0
-    if seroconcordant (i.e. +/+ or -/-).  The check finds the sum and product of the two
-    serostatuses.  If sum is >0 (so at least one is HIV+) and the product is zero (so at least one
-    is HIV-) then the partnership is serodiscordant. 
-    
-    Arguments
-    ---------
-    pair : pointer to a partnership struct
-        The partnership to test for serodiscordance.  
-    
-    Returns
-    -------
-    int
-        1 if the partnership is serodiscordant; zero otherwise
-    */
     return(
         ((pair->ptr[0]->HIV_status * pair->ptr[1]->HIV_status) == 0) && 
         ((pair->ptr[0]->HIV_status + pair->ptr[1]->HIV_status) > 0)
@@ -535,31 +596,37 @@ int is_serodiscordant(partnership *pair){
 }
 
 
-int compare_longs (const void *a, const void *b){
+/**************************************************************************//**
+ * @brief Compare two long integers to determine ordering
+ * 
+ * @details For use within `qsort` function of `stdlib` library when sorting
+ * an array of numbers.
+ * @param a First integer to compare
+ * @param b Second integer to compare
+ * @returns 1 if a>b, 0 if a==b, -1 if a<b
+ *****************************************************************************/
+
+int compare_longs(const void *a, const void *b){
     const long *da = (const long *) a;
     const long *db = (const long *) b;
-
     return (*da > *db) - (*da < *db);
 }
 
 
+/**************************************************************************//**
+ * @brief Convert community ID to country setting
+ * 
+ * @details Query the `community_id` attribute of a @ref patch_struct structure
+ * and set the `country_setting` attribute according to where the community 
+ * occurs (Zambia communities are <= 12; otherwise South Africa).
+ * The country settings (ZAMBIA and SOUTH_AFRICA) are integers defined within 
+ * @ref constants.h.  Attributes are set for both patches (both patches are 
+ * assumed to be in the same country).
+ * 
+ * @param patch A patch structure with attributes `community_id`, `country_setting`
+ *****************************************************************************/
+
 void get_setting(patch_struct *patch){
-   /* Convert community ID to country setting.  
-    
-    Query the community_id attribute of a patch structure and set the country_setting attribute
-    according to where the community occurs (Zambia communities are <= 12; otherwise South Africa).
-    
-    The country settings (ZAMBIA and SOUTH_AFRICA) are integers defined within constants.h.  
-    
-    Arguments
-    --------
-    patch : pointer to array of patch_struct objects
-    
-    Returns
-    -------
-    Nothing; sets country_setting attribute of the patch object to either macro ZAMBIA or
-    SOUTH_AFRICA (as defined within constants.h)
-    */
     
     int p;
     for(p = 0; p < NPATCHES; p++){
@@ -580,16 +647,17 @@ void get_setting(patch_struct *patch){
 }
 
 
-/* Given the current time (discretised into year and timestep - ie t=year+t_step*TIME_STEP). */
+/**************************************************************************//**
+ * @brief Get current CHiPs round based upon time
+ * 
+ * @details Given a time (discretised into year and timestep - 
+ * ie t=year+t_step*TIME_STEP), return the CHiPs round.
+ * 
+ * @returns CHiPs round or @ref CHIPSROUNDPOSTTRIAL if we are in a time period
+ * that is post-trial
+ *****************************************************************************/
+
 int get_chips_round(parameters *param, int year, int t_step){
-    //printf("Calling chips_sampling_frame() year=%i t_step=%i. Exiting\n",year,t_step);
-    /* proposed modification:
-    int round = 0;
-    while (round < NCHIPSROUNDS){
-        if ((year==param->CHIPS_START_YEAR[0] && t_step>=param->CHIPS_START_TIMESTEP[0]) || (year>param->CHIPS_START_YEAR[0] && year<param->CHIPS_START_YEAR[1])
-                (year==param->CHIPS_START_YEAR[1] && t_step<param->CHIPS_START_TIMESTEP[1]))
-            return r;
-    }    */
     int chips_round;
     int saved_chips_round = CHIPSNOTRUNNING;   /* Default (-2) indicates we are outside of chips rounds - e.g. before trial, or during a break between rounds. */
 
@@ -611,25 +679,31 @@ int get_chips_round(parameters *param, int year, int t_step){
             if ((year>param->CHIPS_START_YEAR[0]) ||  ((year==param->CHIPS_START_YEAR[0]) && (t_step>=param->CHIPS_START_TIMESTEP[0])) ){
                 printf("Warning - in get_chips_round() CHiPs does not seem to be running in year=%i, t_step=%i, CHIPS_START_YEAR=%i CHIPS_START_TIMESTEP=%i. Check that CHiPs were on between-rounds training.\n",year,t_step,param->CHIPS_START_YEAR[0],param->CHIPS_START_TIMESTEP[0]);
                 fflush(stdout);
-                //printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
-                //fflush(stdout);
-                //exit(1);
             }
-
     }
-
     return saved_chips_round;
 }
 
-/* Function returns 1 if this is the start of a chips round, otherwise returns 0. 
-Allows us to carry out chips sampling once per round. */
+
+/**************************************************************************//**
+ * @brief Determine if time is at the start of a CHiPs round
+ * 
+ * @details Allows the carrying out of chips sampling once per round.
+ * 
+ * @param param Parameters object
+ * @param year Year in question
+ * @param t_step Time step in question
+ * @param trial_arm Index of trial arm (see @ref ARM_A, @ref ARM_B, @ref ARM_C)
+ * 
+ * @returns Function returns @ref TRUE if this is the start of a chips round, 
+ * otherwise returns @ref FALSE.
+ *****************************************************************************/
+
 int is_start_of_chips_round(parameters *param, int year, int t_step, int trial_arm){
-    
     int chips_round;
-    int is_start_of_chips = 0;
+    int is_start_of_chips = FALSE;
     
     if(trial_arm == ARM_A || trial_arm == ARM_B){
-        
         for(chips_round = 0; chips_round < NCHIPSROUNDS; chips_round++){
             if(
                 (year == param->CHIPS_START_YEAR[chips_round] &&
@@ -642,7 +716,7 @@ int is_start_of_chips_round(parameters *param, int year, int t_step, int trial_a
                 t_step == param->CHIPS_START_TIMESTEP_POSTTRIAL &&
                 t_step > param->CHIPS_END_TIMESTEP[NCHIPSROUNDS-1])
             ){
-                is_start_of_chips = 1;
+                is_start_of_chips = TRUE;
                 break;
             }
         }
@@ -651,7 +725,7 @@ int is_start_of_chips_round(parameters *param, int year, int t_step, int trial_a
         if(year >= T_ROLLOUT_CHIPS_EVERYWHERE){
             // Allow rollout under CF scenarios
             if(ALLOW_COUNTERFACTUAL_ROLLOUT == 1){
-                is_start_of_chips = 1;
+                is_start_of_chips = TRUE;
             }else{
                 if((year > param->CHIPS_END_YEAR[NCHIPSROUNDS-1] &&
                 t_step == param->CHIPS_START_TIMESTEP_POSTTRIAL) ||
@@ -660,7 +734,7 @@ int is_start_of_chips_round(parameters *param, int year, int t_step, int trial_a
                 t_step == param->CHIPS_START_TIMESTEP_POSTTRIAL &&
                 t_step > param->CHIPS_END_TIMESTEP[NCHIPSROUNDS-1])
                 ){
-                    is_start_of_chips = 1;
+                    is_start_of_chips = TRUE;
                 }
             }
         }
@@ -669,29 +743,48 @@ int is_start_of_chips_round(parameters *param, int year, int t_step, int trial_a
 }
 
 
-/* Currently we have 7 options - directory for parameters,
- number of runs, start run number,
- * By setting rng_seed_offset to be an integer which is not 0, this changes the C seed from param->rng_seed to param->rng_seed+rng_seed_offset.
- * */
+/**************************************************************************//**
+ * @brief Parse the command-line arguments to the model
+ * 
+ * @details Currently there are 7 command-line arguments parsed: 1) directory
+ *  for parameters, 2) number of simulation runs (default is 1000), 3) whether
+ * this is a counterfactual run or not, 4) start run number (if not first run),
+ * 5) number of runs of the simulation to perform (default is difference between
+ * total runs and start run number), 6) the `rng_seed_offset` used as an offset
+ * of the C random-number generator, 6) `rng_seed_offset_PC` offset used for
+ * random number generator for PC sampling (not currently used).
+ * 
+ * By setting rng_seed_offset to be an integer which is not 0, this changes the
+ * C seed from `param->rng_seed` to `param->rng_seed+rng_seed_offset`.
+ * 
+ * @param argc Number of arguments passed to command-line
+ * @param argv Character array of passed arguments
+ * @param n_runs Number of simulation runs
+ * @param i_startrun Start run number of simulation (if not first run)
+ * @param n_startrun Number of simulations to run (if not all remaining)
+ * @param is_counterfactual Whether this is a counterfactual run (1) or not (0)
+ * @param rng_seed_offset Random number offset from the seed used in C
+ * @param rng_seed_offset_PC Random number offset for the PC sampling used
+ * in the model (not currently used)
+ *****************************************************************************/
+
 void parse_command_line_arguments(int argc, char **argv, int *n_runs, int *i_startrun, 
     int *n_startrun, int *is_counterfactual, int *rng_seed_offset, int *rng_seed_offset_PC){
     // Argc is the number of arguments. Note that the first argument is the filename so argc is always >=1.
     if (argc == 1 || argc > 9){
-        //printf("ERROR: Arguments must include the directory of the parameter files. Optional second argument: number of runs (default=1000). Optional third argument: run numebr to start at (default is 1). Optional fourth argument: directory where results are written. \nExiting\n");
         printf("ERROR: Arguments must include the directory of the parameter files. \nOptional second argument: number of runs (default=1000). \nOptional third argument: is this run a counterfactual run (ie. all patches are assumed to have arm C testing/VMMC until 2020, after which all patches with patch number p>0 become popart-like while patch 0 remains without any UTT). Optional fourth argument: run numebr to start at (default is 1).\n Optional fifth argument: directory where results are written. Optional sixth argument: random seed offset (for stochasticity of impact). Optional seventh argument: random seed offset PC (for stochasticity of PC recruitment).\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
 
-    if (argc>2){
+    if(argc>2){
         /* The first argument of strtol() is the input string, the second is where it puts any characters in the first argument, the third is the base of the number to be returned. */
         *n_runs = strtol(argv[2],NULL,10);
-    }
-    else
+    }else
         *n_runs = 1000;
 
-    if (argc>3){
+    if(argc>3){
         *is_counterfactual = strtol(argv[3],NULL,10);
         /* Check that this only takes values 0 or 1: */
         if (!(*is_counterfactual==NOT_COUNTERFACTUAL_RUN || *is_counterfactual==IS_COUNTERFACTUAL_RUN)){
@@ -700,33 +793,30 @@ void parse_command_line_arguments(int argc, char **argv, int *n_runs, int *i_sta
             fflush(stdout);
             exit(1);
         }
-    }
-    else
+    }else
         *is_counterfactual = NOT_COUNTERFACTUAL_RUN; /* Default value. */
 
-
-    if (argc>4)
+    if(argc>4)
         *i_startrun = strtol(argv[4],NULL,10);
     else
         *i_startrun = 1;
 
-    if (argc>5)
+    if(argc>5)
         *n_startrun = strtol(argv[5],NULL,10);
 	else
         *n_startrun = (*n_runs) - (*i_startrun - 1);
 
-    if (argc>7)
+    if(argc>7)
         *rng_seed_offset = strtol(argv[7],NULL,10);
     else
         *rng_seed_offset = 0;
 
-    if (argc>8)
+    if(argc>8)
         *rng_seed_offset_PC = strtol(argv[8],NULL,10);
     else
         *rng_seed_offset_PC = 0;
     printf("Offset for PC is %i\n",*rng_seed_offset_PC);
-
-    if (*i_startrun>*n_runs){
+    if(*i_startrun>*n_runs){
         printf("ERROR: 4th argument (i_startrun) must be <= 2nd argument (n_runs).\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
@@ -735,47 +825,33 @@ void parse_command_line_arguments(int argc, char **argv, int *n_runs, int *i_sta
 }
 
 
+/**************************************************************************//**
+ * @brief Append code version number to the input char array `version`
+ * 
+ * @param version Variable which will store the version number
+ * @param stringlength length of memory in `version` 
+ * (ie max number of characters in the version number)
+ *****************************************************************************/
+
 void get_IBM_code_version(char *version, int stringlength){
-   /* Return version number to the character string `version`.  
-    
-    Arguments
-    ---------
-    version : pointer to char array
-        variable which will store the version number
-    
-    stringlength : int
-        length of memory in `version` (ie max number of characters in the version number).
-    
-    Returns
-    ------
-    Nothing; appends version number to the input char array `version`
-    */
     strncpy(version, "V1.2", stringlength);
     return;
 }
 
 
+/**************************************************************************//**
+ * @brief Add OS-depdendent slash ('/' or '\') to a character array
+ * 
+ * @details Add a space that is OS-dependent, i.e. works for both Linux/OS X
+ * ("/") or Windows ("\\") respectively.  If filename is empty then this
+ * corresponds to "current directory" so adding a slash would move to root
+ * directory instead - which would be very bad!!!  So only add "/" or "\" if
+ * the filename is not currently empty.
+ * 
+ * @param filename File name of interest that needs a slash added to it
+ *****************************************************************************/
+
 void add_slash(char *filename){
-    /* Add OS-depdendent slash ('/' or '\') to a character array.  
-    
-    Add a space that is OS-dependent, i.e. works for both Linux/OS X ("/") or Windows ("\\")
-    respectively.
-    
-    If filename is empty then this corresponds to "current directory" so adding a slash would move
-    to root directory instead - which would be very bad!!!  So only add "/" or "\" if the filename
-    is not currently empty.
-    
-    Arguments
-    ---------
-    filename : pointer to a character array
-        File name of interest that needs a slash added to it.  
-    
-    Returns
-    -------
-    Nothing; function adjusts the input character array
-    */
-    
-    
     /* Check if filename is empty */
     if(filename[0] != '\0'){
         if(THISOS == 0){
@@ -789,28 +865,25 @@ void add_slash(char *filename){
 }
 
 
-void join_strings_with_check(char *dest, char *src, int dest_array_size, char *error_message){
-    /* Join the string src to dest. ie dest = dest + source.
-    
-    Arguments
-    ---------
-    dest, src : pointer to char arrays
-        Strings to be joined
-    
-    dest_array_size : int
-        Size of the char array dest (so check memory).
-    
-    error_message : pointer to char
-        Printed if the array dest is not big enough - should be of the form "SOURCE and DESTINATION
-        in function f()."  Where SOURCE, DESTINATION and f() are changed as appropriate.  
-    
-    
-    Note that the arguments dest and src are ordered in join_strings_with_check() to be as for
-    strcat(dest, src).
-    */
+/**************************************************************************//**
+ * @brief Join the string `src` to `dest`. ie `dest = dest + src`
+ * 
+ * @details Note that the arguments `dest` and `src` are ordered in 
+ * `join_strings_with_check()` to be as for `strcat(dest, src)`.
+ * 
+ * @param dest String array to be joined
+ * @param src String array to be joined
+ * @param dest_array_size Size of destination array
+ * @param error_message Error message to be printed if the array
+ * `dest` is not big enough - should be of the form 
+ * "SOURCE and DESTINATION in function f()."  Where SOURCE, DESTINATION 
+ * and f() are changed as appropriate.
+ *****************************************************************************/
+
+void join_strings_with_check(char *dest, char *src, int dest_array_size, 
+        char *error_message){
     
     /* -1 as the final character is '\0'. */
-    //printf("Check %i, %lu\n",dest_array_size,sizeof(*dest));
     if((strlen(src) + strlen(dest)) < dest_array_size - 1){
         strcat(dest, src);
     }else{
@@ -823,28 +896,51 @@ void join_strings_with_check(char *dest, char *src, int dest_array_size, char *e
 }
 
 
-void make_output_label_struct(file_label_struct *file_labels, long python_rng_seed, int i_run, int rng_seed_offset, int rng_seed_offset_PC, patch_struct *patch, int is_counterfactual, int PCdata){
+/**************************************************************************//**
+ * @brief Create commonly used string labels for filenames of output files
+ * 
+ * @details Create various prefixes and suffixes that are used in the file names
+ * of output files
+ * 
+ * @param file_labels Structure of @ref file_label_struct for storing labels
+ * for filenames (i.e. strings that are used across several files in the
+ * construction of output filenames).  There are three character arrays 
+ * within this struct:\n
+ * 1) `filename_label_bypatch`, for patch-specific data (most commonly used file-type)\n
+ * 2) `filename_label_allpatches`, for data that's summarised across both patches\n
+ * 3) `filename_label_allpatches_witharm_communityno`, files used for debugging
+ * @param python_rng_seed Random seed saved within `python_seed.txt` file
+ * @param i_run Simulation run number
+ * @param rng_seed_offset Random seed offset from what the C RNG is using
+ * @param rng_seed_offset_PC Random seed used for Population Cohort sampling
+ * (not currently used within the model but saved nonetheless)
+ * @param patch Patch index
+ * @param is_counterfactual Is this a counterfactual run?  Which would include
+ * `CF` at the end of the file name.
+ * @param PCdata Is this a list of files associated with the Population Cohort?
+ * Which would include `PConly` in the filename.
+ *****************************************************************************/
+
+void make_output_label_struct(file_label_struct *file_labels, long python_rng_seed,
+        int i_run, int rng_seed_offset, int rng_seed_offset_PC, 
+        patch_struct *patch, int is_counterfactual, int PCdata){
     int p;
-
-    char version[21];  /* 20 is arbitrary but note we have to change the 20 in the call to get_IBM_code_version() below if we change this. */
-    //char temp[LONGSTRINGLENGTH];
-
+    char version[21];
     char community_info[LONGSTRINGLENGTH];
-    char clusternumber[20];    /* Again this is arbitrary - assume we never have stupidly long filenames! */
-    char patchinfo[20];    /* Again this is arbitrary - assume we never have stupidly long filenames! */
-    char run_info_ending[LONGSTRINGLENGTH];   /* Again this is arbitrary - assume we never have stupidly long filenames! */
+    char clusternumber[20];
+    char patchinfo[20];
+    char run_info_ending[LONGSTRINGLENGTH];
 
     memset(clusternumber, '\0', sizeof(clusternumber));
     memset(community_info, '\0', sizeof(community_info));
     memset(patchinfo, '\0', sizeof(patchinfo));
     memset(run_info_ending, '\0', sizeof(run_info_ending));
 
-
-    /* First sort out the parts of the filename which are independent of patch number: */
-    get_IBM_code_version(version,20);
+    // Create string of IBM code version
+    get_IBM_code_version(version, 20);
 
     if (is_counterfactual==NOT_COUNTERFACTUAL_RUN){
-        if (PCdata==0)
+        if (PCdata==FALSE)
             sprintf(run_info_ending,"_Rand%li_Run%i_PCseed%i_%i.csv",python_rng_seed,i_run+1,rng_seed_offset_PC,rng_seed_offset);
         else
             sprintf(run_info_ending,"_Rand%li_Run%i_PCseed%i_%i_PConly.csv",python_rng_seed,i_run+1,rng_seed_offset_PC,rng_seed_offset);
@@ -852,14 +948,13 @@ void make_output_label_struct(file_label_struct *file_labels, long python_rng_se
 
     //Ann_out_CL01_SA_A_V1.2_patch0_RandX_RUn1_PCseed4_10.csv
     else if (is_counterfactual==IS_COUNTERFACTUAL_RUN){
-        if (PCdata==0)
+        if (PCdata==FALSE)
             sprintf(run_info_ending,"_Rand%li_Run%i_PCseed%i_%i_CF.csv",python_rng_seed,i_run+1,rng_seed_offset_PC,rng_seed_offset);
         else
             sprintf(run_info_ending,"_Rand%li_Run%i_PCseed%i_%i_PConly_CF.csv",python_rng_seed,i_run+1,rng_seed_offset_PC,rng_seed_offset);
 
         printf("Making this run a counterfactual with label=%s\n",run_info_ending);
-    }
-    else{
+    }else{
         printf("Unknown value for is_counterfactual=%i in make_output_label_struct(). Exiting\n",is_counterfactual);
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
@@ -884,6 +979,7 @@ void make_output_label_struct(file_label_struct *file_labels, long python_rng_se
             strcpy(community_info,"_Za_");
         else
             strcpy(community_info,"_SA_");
+        
         if (patch[p].trial_arm==ARM_A)
             strcat(community_info,"A_");
         else if (patch[p].trial_arm==ARM_B)
@@ -893,7 +989,6 @@ void make_output_label_struct(file_label_struct *file_labels, long python_rng_se
         strcat(community_info,version);
 
         sprintf(patchinfo,"_patch%i",p);
-
 
         if (strlen(clusternumber)>LONGSTRINGLENGTH-1){
             printf("Error - need to increase size of file_labels->filename_label_bypatch[p] as clusternumber[] in make_output_label_struct() is too long. Exiting\n");
@@ -916,43 +1011,36 @@ void make_output_label_struct(file_label_struct *file_labels, long python_rng_se
             strcpy(file_labels->filename_label_allpatches_witharm_communityno,clusternumber);
             join_strings_with_check(file_labels->filename_label_allpatches_witharm_communityno, community_info, LONGSTRINGLENGTH-1, "community_info and filename_label_allpatches_witharm_communityno in make_output_label_struct()");
             join_strings_with_check(file_labels->filename_label_allpatches_witharm_communityno, run_info_ending, LONGSTRINGLENGTH, "run_info_ending and filename_label_allpatches_witharm_communityno in make_output_label_struct()");
-
         }
-
     }
-
 }
 
 
+/**************************************************************************//**
+ * @brief Set up file names for output files
+ * 
+ * @details This function has many calls to @ref concatenate_filename() which 
+ * concatenates the 2nd, 3rd, and 4th input arguments into a single string
+ * which is stored in the first argument (in the order 2nd-4th-3rd args).  
+ * Nothing is returned from this function, file names are added to attributes
+ * of the `file_data_store` structure.
+ * 
+ * @param file_labels Structure for storing labels for filenames (i.e. strings
+ * that are used across several files in the construction of output filenames).
+ * There are three character arrays within this struct:\n
+ * 1) `filename_label_bypatch`, for patch-specific data (most commonly used file-type)\n
+ * 2) `filename_label_allpatches`, for data that's summarised across both patches\n
+ * 3) `filename_label_allpatches_witharm_communityno`, files used for debugging
+ * @param file_data_store Structure that stores pointers to output files
+ * and full names of the output files.  Usually, when this function is 
+ * called these will all be empty and will be populated by calls to 
+ * @ref concatenate_filename()
+ * @param output_file_directory Output directory of interest 
+ * e.g. "./data/SAMPLED_PARAMETERS/PARAMS_COMMUNITY5/Output"
+ *****************************************************************************/
+
 void make_filenames_for_struct(file_label_struct *file_labels, 
-    file_struct *file_data_store, char *output_file_directory){
-    /*
-    Set up file names for output files.  
-    
-    This funciton has many calls to concatenate_filename() which concatenates the 2nd, 3rd, and 4th
-    input arguments into a single string which is stored in the first argument (in the order
-    2nd-4th-3rd args).  
-    
-    Arguments
-    ---------
-    file_labels : pointer to file_label_struct structure
-        Structure that holds all the file names of files to be written.  There are three character 
-        arrays within this struct:
-        1) filename_label_bypatch, for patch-specific data (most commonly used file-type)
-        2) filename_label_allpatches, for data that's summarised across both patches
-        3) filename_label_allpatches_witharm_communityno, files used for debugging 
-        (not entirely sure, WP)
-    file_data_store : pointer to a file_struct structure
-        Structure where the different file names will be stored.  Usually, when this function is 
-        called these will all be empty and will be populated by calls to concatenate_filename().  
-    output_file_directory : pointer to a char
-        Output directory of interest, e.g. "./data/SAMPLED_PARAMETERS/PARAMS_COMMUNITY5/Output"
-    
-    Returns
-    -------
-    Nothing; file names are added to attributes of the `file_data_store` structure.  
-    */
-    
+        file_struct *file_data_store, char *output_file_directory){
     int p;
     for(p = 0; p < NPATCHES; p++){
         concatenate_filename(file_data_store->filename_annual_output[p],
@@ -1070,7 +1158,6 @@ void make_filenames_for_struct(file_label_struct *file_labels,
         output_file_directory, file_labels->filename_label_allpatches_witharm_communityno,
         "Risk_assortativity_cross_sectional");
 
-
     /* Set up phylogenetic output filenames: */
     char phylo_trans_filename_temp[100];
     char phylo_indiv_filename_temp[100];
@@ -1089,18 +1176,15 @@ void make_filenames_for_struct(file_label_struct *file_labels,
         join_strings_with_check(phylo_indiv_filename_temp, temp, 100, 
             "phylo_trans_filename_temp and temp in make_filenames_for_struct()");
     }
-    
     concatenate_filename(file_data_store->filename_phylogenetic_transmission,
         output_file_directory, file_labels->filename_label_bypatch[0],
         phylo_trans_filename_temp);
     concatenate_filename(file_data_store->filename_phylogenetic_individualdata,
         output_file_directory, file_labels->filename_label_bypatch[0],
         phylo_indiv_filename_temp);
-
     concatenate_filename(file_data_store->filename_hivsurvival_individualdata,
         output_file_directory, file_labels->filename_label_bypatch[0],
         "HIVsurvival_individualdata");
-
     /* Output for hazards - note that we only want from patch 0. */
     concatenate_filename(file_data_store->filename_hazard_output,
         output_file_directory, file_labels->filename_label_bypatch[0],
@@ -1108,35 +1192,29 @@ void make_filenames_for_struct(file_label_struct *file_labels,
 }
 
 
-void concatenate_filename(char *output_filename, char *output_file_directory, char *label_p, 
-    char *file_tag){
-   /* Join the file output directory, file_tag and label_p into a single string
-    and store within `output_filename`.  This will eventually be used as the complete path 
-    for writing files to disk.  
-    
-    The input argument `output_filename` is initially blanked out by this function.  
-    
-    "file_tag" is the start name of the file. Function *SHOULD* be designed to stop buffer overflow.
-    
-    Arguments
-    ---------
-    
-    output_filename : pointer to a char
-        Character array in which the complete file name will be stored (is initially blanked by this
-        function).  This is usually an empty character string.  
-    output_file_directory : pointer to a char
-        Directory to where the file of interest should be saved.  
-        e.g. "./data/SAMPLED_PARAMETERS/PARAMS_COMMUNITY5/Output"
-    label_p : pointer to a char
-        Final identifier for the file, e.g. "_CL05_Za_A_V1.2_patch0_Rand10_Run1_PCseed0_0.csv"
-    file_tag : pointer to a char
-        Tag for the file in question, e.g. "Annual_outputs"
-    
-    Returns
-    -------
-    Nothing; copies a string to `output_filename`.  
-    */
-    
+/**************************************************************************//**
+ * @brief Set up file names for output files
+ * 
+ * @details Join the file output directory, `file_tag` and `label_p` into a 
+ * single string and store within `output_filename`.  This will eventually
+ * be used as the complete path for writing files to disk.  The input argument
+ * `output_filename` is initially blanked out by this function.  "file_tag" is
+ * the start name of the file. Function *SHOULD* be designed to stop buffer 
+ * overflow.  Nothing is returned from this function, it copies a string to
+ * `output_filename`.
+ * 
+ * @param output_filename Character array in which the complete file name
+ * will be stored (is initially blanked by this function).  This is usually
+ * an empty character string.
+ * @param output_file_directory Directory to where the file of interest 
+ * should be saved.  e.g. "./data/SAMPLED_PARAMETERS/PARAMS_COMMUNITY5/Output"
+ * @param label_p Final identifier for the file, 
+ * e.g. "_CL05_Za_A_V1.2_patch0_Rand10_Run1_PCseed0_0.csv"
+ * @param file_tag Tag for the file in question, e.g. "Annual_outputs"
+ *****************************************************************************/
+
+void concatenate_filename(char *output_filename, char *output_file_directory, 
+        char *label_p, char *file_tag){
     /* Ensure that output_filename is blank. */
     memset(output_filename, '\0', LONGSTRINGLENGTH*sizeof(char));
     
@@ -1163,104 +1241,173 @@ void concatenate_filename(char *output_filename, char *output_file_directory, ch
 }
 
 
-/* Note that this function can be called multiple times whenever we want to take snapshots at several times but want to
- * have flexibility as to the times when we store data - so we create several files each of which has the corresponding
- * year in the title. */
-void make_filenames_for_snapshot(char *output_filename, char *output_file_directory, file_label_struct *file_labels, int year, int p, char *file_tag){
-    char yearstring[6]; /* Each year has 4 digits + one char for "_" + one extra char for terminating '\0'. */
+/**************************************************************************//**
+ * @brief Make file names for use when generating snapshots of the simulation,
+ * such  as partnership network in a particular year.
+ * 
+ * @details Note that this function can be called multiple times whenever we
+ * want to take snapshots at several times but want to have flexibility as
+ * to the times when we store data - so we create several files each of which
+ * has the corresponding year in the title.
+ * 
+ * @param output_filename Character array in which the complete file name
+ * will be stored (is initially blanked by this function).  This is usually
+ * an empty character string.
+ * @param output_file_directory Output directory of interest 
+ * e.g. "./data/SAMPLED_PARAMETERS/PARAMS_COMMUNITY5/Output"
+ * @param file_labels Structure of @ref file_label_struct for storing labels
+ * for filenames (i.e. strings that are used across several files in the
+ * construction of output filenames).  There are three character arrays 
+ * within this struct:\n
+ * 1) `filename_label_bypatch`, for patch-specific data (most commonly used file-type)\n
+ * 2) `filename_label_allpatches`, for data that's summarised across both patches\n
+ * 3) `filename_label_allpatches_witharm_communityno`, files used for debugging
+ * @param year Year in which snapshot is being taken
+ * @param p Patch index
+ * @param file_tag Tag for the file in question, e.g. "Annual_outputs"
+ *****************************************************************************/
+
+void make_filenames_for_snapshot(char *output_filename, char *output_file_directory,
+        file_label_struct *file_labels, int year, int p, char *file_tag){
+    
+    /* Each year has 4 digits + one char for "_" + one extra char for terminating '\0'. */
+    char yearstring[6];
     sprintf(yearstring,"_%i",year);
-    memset(output_filename, '\0', LONGSTRINGLENGTH*sizeof(char));            /* Ensure that output_filename is blank. */
+    // Ensure that output_filename is blank
+    memset(output_filename, '\0', LONGSTRINGLENGTH*sizeof(char));
     /* If output_filename is not long enough then exit - so prevent buffer overflow.
      * We add 2 as we need a termination character '\0' and the slash from add_slash(). */
     if (LONGSTRINGLENGTH < strlen(output_file_directory) + strlen(yearstring) + strlen(file_labels->filename_label_bypatch[p]) +strlen(file_tag) + 2){
-        printf("Inadequate memory allocated for file_tag=%s %lu %lu %lu \nExiting\n",file_labels->filename_label_bypatch[p],sizeof(output_filename),strlen(output_file_directory),strlen(file_tag));
+        printf("Inadequate memory allocated for file_tag=%s %lu %lu %lu \nExiting\n",
+            file_labels->filename_label_bypatch[p],
+            sizeof(output_filename),
+            strlen(output_file_directory),
+            strlen(file_tag));
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-
-    /* Copy the output directory to output_filename. Note that while 'strcpy()' is regarded as more prone to buffer overflow, we check this beforehand. */
+    /* Copy the output directory to output_filename. Note that while 'strcpy()' 
+    is regarded as more prone to buffer overflow, we check this beforehand. */
     strcpy(output_filename,output_file_directory);
-    add_slash(output_filename); /* Adds a / or \ as needed if working in directory other than current local dir. */
+    // Add a / or \ as needed if working in directory other than current local dir
+    add_slash(output_filename);
     strcat(output_filename,file_tag);
     strcat(output_filename,yearstring);
     strcat(output_filename,file_labels->filename_label_bypatch[p]);
-
-
 }
 
-/* Merge this with others above??? */
-void make_calibration_output_filename(char *output_filename, char *output_file_directory, long python_rng_seed, patch_struct *patch, int p, int rng_seed_offset, int rng_seed_offset_PC, int is_counterfactual){
 
-    char temp[LONGSTRINGLENGTH];     /*  This is arbitrary - assume we never have stupidly long filenames! */
+/**************************************************************************//**
+ * @brief Create output file name for calibration files and store in string
+ * 
+ * @details Add information such as community ID, country name, patch index, 
+ * and trial arm to calibration output file names (files starting with 
+ * `Calibration_output_*`).
+ * 
+ * @param output_filename Character array within which to store the final 
+ * filename for the calibration output
+ * @param output_file_directory Output directory of interest 
+ * e.g. "./data/SAMPLED_PARAMETERS/PARAMS_COMMUNITY5/Output"
+ * @param python_rng_seed Random seed saved within `python_seed.txt` file
+ * @param patch Patch structure
+ * @param p Patch index
+ * @param rng_seed_offset Random seed offset from what the C RNG is using
+ * @param rng_seed_offset_PC Random seed used for Population Cohort sampling
+ * (not currently used within the model but saved nonetheless)
+ * @param is_counterfactual Is this a counterfactual run?  Which would include
+ * `CF` at the end of the file name.
+ *****************************************************************************/
 
-
-    char version[21];     /* 20 is arbitrary but note we have to change the 20 in the call to get_IBM_code_version() below if we change this. */
-    get_IBM_code_version(version,20);
+void make_calibration_output_filename(char *output_filename, char *output_file_directory,
+        long python_rng_seed, patch_struct *patch, int p, int rng_seed_offset, 
+        int rng_seed_offset_PC, int is_counterfactual){
+    char temp[LONGSTRINGLENGTH];
+    char version[21];
+    get_IBM_code_version(version, 20);
 
     /* Ensure everything is blank: */
     memset(temp, '\0', sizeof(temp));
+    strncpy(output_filename, output_file_directory, LONGSTRINGLENGTH);
 
-    strncpy(output_filename,output_file_directory,LONGSTRINGLENGTH);
+    /* Adds a / or \ as needed if working in directory other than current local dir. */
+    add_slash(output_filename);
 
-    add_slash(output_filename); /* Adds a / or \ as needed if working in directory other than current local dir. */
-
-    /* Add cluster number. Pad with a zero if needed: */
-    if (patch[p].community_id<=9)
-        sprintf(temp,"Calibration_output_CL0%i",patch[p].community_id);
+    // Add cluster number. Pad with a zero if needed
+    if (patch[p].community_id <= 9)
+        sprintf(temp,"Calibration_output_CL0%i", patch[p].community_id);
     else
-        sprintf(temp,"Calibration_output_CL%i",patch[p].community_id);
+        sprintf(temp,"Calibration_output_CL%i", patch[p].community_id);
+    strcat(output_filename, temp);
 
-    strcat(output_filename,temp);
-
+    // Add country name
     if (patch[p].country_setting==ZAMBIA)
-        strcat(output_filename,"_Za_");
+        strcat(output_filename, "_Za_");
     else
-        strcat(output_filename,"_SA_");
+        strcat(output_filename, "_SA_");
 
+    // Add arm label to string
     if (patch[p].trial_arm==ARM_A)
-        strcat(output_filename,"A_");
+        strcat(output_filename, "A_");
     else if (patch[p].trial_arm==ARM_B)
-        strcat(output_filename,"B_");
+        strcat(output_filename, "B_");
     else
-        strcat(output_filename,"C_");
+        strcat(output_filename, "C_");
 
-    strcat(output_filename,version);
+    // Add patch index to string
+    strcat(output_filename, version);
+    sprintf(temp, "_patch%i_", p);
+    strcat(output_filename, temp);
 
-    sprintf(temp,"_patch%i_",p);
-    strcat(output_filename,temp);
-
-
+    // Add counterfactual label to string
     if (is_counterfactual==NOT_COUNTERFACTUAL_RUN)
-        sprintf(temp,"Rand%li_PCseed%i_%i.csv",python_rng_seed,rng_seed_offset,rng_seed_offset_PC);
+        sprintf(temp, "Rand%li_PCseed%i_%i.csv", python_rng_seed, rng_seed_offset, rng_seed_offset_PC);
     else
-        sprintf(temp,"Rand%li_PCseed%i_%i_CF.csv",python_rng_seed,rng_seed_offset,rng_seed_offset_PC);
-    strcat(output_filename,temp);
-    //printf("output filename = %s\n",output_filename);
+        sprintf(temp, "Rand%li_PCseed%i_%i_CF.csv", python_rng_seed, rng_seed_offset, rng_seed_offset_PC);
+    strcat(output_filename, temp);
 }
 
-/* Takes an existing string, counts the number of commas in it, and adds extra commas for padding
- * so that the total number of data points including blanks is NDATA (so NDATA-1 commas).
- * This is used for example for the calibration outputs
- * to ensure that the csv file is more readable. */
-void add_commas_to_calibration_output(char *output_string,int NDATA){
+
+/**************************************************************************//**
+ * @brief Take an existing string, counts the number of commas in it, 
+ * and add extra commas for padding
+ * 
+ * @details The aim of the function is that the total number of data points
+ * including blanks is NDATA (so NDATA-1 commas).  This function is used for
+ * example for the calibration outputs to ensure that the csv file is more
+ * readable.
+ * 
+ * @param output_string Character array of output that may need padding with 
+ * commas
+ * @param NDATA Number of data points
+ *****************************************************************************/
+
+void add_commas_to_calibration_output(char *output_string, int NDATA){
     int i = 0;
     /* Find the first comma (if any) in the string: */
     char *pch=strchr(output_string,',');
+
     /* Count the rest of the commas, one by one. */
-    while (pch!=NULL) {
+    while(pch!=NULL){
         i++;
         pch=strchr(pch+1,',');
     }
-
-    //int k;
     while(i<NDATA){
-        //for(k=0;k<(NDATA-i-1);k++)
         strcat(output_string,",");
         i++;
     }
 }
 
+
+/**************************************************************************//**
+ * @brief Print a parameters structure to stdout
+ * 
+ * @details Prints every attribute of the parameters structure to stdout (the
+ * screen, typically).  This function needs to be kept up to date with changes
+ * to the attributes of the @ref parameters structure.
+ * 
+ * @param param Parameter structure to print to stdout
+ *****************************************************************************/
 
 void print_param_struct(parameters *param){
     int g,ag,bg,icd4,spvl,r,i,y;
@@ -1361,7 +1508,6 @@ void print_param_struct(parameters *param){
     for (i=0; i<param->DHS_params->NDHSROUNDS; i++)
         printf("param->DHS_params->DHS_YEAR[%i]=%i\n",i,param->DHS_params->DHS_YEAR[i]);
 
-
     printf("param->time_to_background_HIVtestNOW=%lg\n",param->time_to_background_HIVtestNOW);
     printf("param->time_to_background_HIVtest_maxval=%lg\n",param->time_to_background_HIVtest_maxval);
     printf("param->time_to_background_HIVtest_exponent=%lg\n",param->time_to_background_HIVtest_exponent);
@@ -1459,29 +1605,33 @@ void print_param_struct(parameters *param){
     for (g=0; g<N_GENDER; g++)
         for (r=0; r<N_RISK; r++)
             printf("param->initial_prop_infected_gender_risk[g][r]=%lg\n",param->initial_prop_infected_gender_risk[g][r]);
-
     printf("------------------------------------------------------------------------------------\n");
     printf("------------------------------------------------------------------------------------\n");
     printf("------------------------------------------------------------------------------------\n");
-
 }
 
 
+/**************************************************************************//**
+ * @brief Compare each input parameter against a pre-defined, suitable range
+ * 
+ * @details If any parameter does not fit in the given range, then the 
+ * function prints an error message to stdout and exits.  Note that this 
+ * function can avoid deliberately setting unreasonable and unrealistic 
+ * values for debugging, and this check can be disabled by setting 
+ * @ref CHECKPARAMS in @ref constants.h to 0.  Note too that this parameter
+ * checking functionality can be implemented in Python.  Updating the input
+ * parameters of the model will require updating this function also.
+ * 
+ * @param param A parameters structure
+ *****************************************************************************/
+
 void check_if_parameters_plausible(parameters *param){
-   /* Function goes through each input parameter and checks it against a pre-defined range. If any parameter doesn't
-    * fit in the given range, then print an error message and exit.
-    * Note that this function can prevent you from deliberately setting crazy values for debugging, so can disable by
-    * setting CHECKPARAMS in constants.h to 0.
-    */
-    
-    
     int g, ag, bg, icd4, jcd4, spvl, r, a_unpd, y, iquarter;
     int ac, chips_timestep, chips_round, dhs_round;
     double temp;
-    
     for(y = 0; y < N_UNPD_TIMEPOINTS; y++){
-        for (a_unpd = 0; a_unpd < N_AGE_UNPD_FERTILITY; a_unpd++){
-            if (param->fertility_rate_by_age[a_unpd][y] < 1e-5 || param->fertility_rate_by_age[a_unpd][y] > 1.0){
+        for(a_unpd = 0; a_unpd < N_AGE_UNPD_FERTILITY; a_unpd++){
+            if(param->fertility_rate_by_age[a_unpd][y] < 1e-5 || param->fertility_rate_by_age[a_unpd][y] > 1.0){
                 printf("Error: param->total_fertility_rate is outside expected range [0.1,8]\nExiting\n");
                 printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
                 fflush(stdout);
@@ -1489,14 +1639,13 @@ void check_if_parameters_plausible(parameters *param){
             }
         }
     }
-
     if(param->sex_ratio < 0.4 || param->sex_ratio > 0.6){
         printf("Error: param->sex_ratio is outside expected range [0.4,0.6]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->p_child_circ<0 || param->p_child_circ>1){
+    if(param->p_child_circ<0 || param->p_child_circ>1){
         printf("Error: param->p_child_circ is outside expected range [0,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
@@ -1509,212 +1658,196 @@ void check_if_parameters_plausible(parameters *param){
         fflush(stdout);
         exit(1);
     }
-
-    if (param->eff_circ_tmc<0.0 || param->eff_circ_tmc>param->eff_circ_vmmc){
+    if(param->eff_circ_tmc<0.0 || param->eff_circ_tmc>param->eff_circ_vmmc){
         printf("Error: param->eff_circ_tmc is outside expected range [0.0,param->eff_circ_vmmc]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-
-    if (param->rr_circ_unhealed<0 || param->rr_circ_unhealed>3){
+    if(param->rr_circ_unhealed<0 || param->rr_circ_unhealed>3){
         printf("Error: param->rr_circ_unhealed is outside expected range [0,3]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-
-    if (param->t0_pmtct<1990 || param->t0_pmtct>2015){
+    if(param->t0_pmtct<1990 || param->t0_pmtct>2015){
         printf("Error: param->t0_pmtct is outside expected range [1990,2015]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t50_pmtct<1990 || param->t50_pmtct>2015){
+    if(param->t50_pmtct<1990 || param->t50_pmtct>2015){
         printf("Error: param->t50_pmtct is outside expected range [1990,2015]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-
-    if (param->t0_pmtct>param->t50_pmtct){
+    if(param->t0_pmtct>param->t50_pmtct){
         printf("Error: param->t0_pmtct is bigger than param->t50_pmtct.\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->average_log_viral_load<3 || param->average_log_viral_load>6){
+    if(param->average_log_viral_load<3 || param->average_log_viral_load>6){
         printf("Error: param->average_log_viral_load is outside expected range [3,6]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->average_annual_hazard<0.001 || param->average_annual_hazard>0.6){
+    if(param->average_annual_hazard<0.001 || param->average_annual_hazard>0.6){
         printf("Error: param->average_annual_hazard is outside expected range [0.01,0.6]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->RRacute_trans<1 || param->RRacute_trans>50){
+    if(param->RRacute_trans<1 || param->RRacute_trans>50){
         printf("Error: param->RRacute_trans is outside expected range [1,50]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->RRmale_to_female_trans<0.33 || param->RRmale_to_female_trans>5){
+    if(param->RRmale_to_female_trans<0.33 || param->RRmale_to_female_trans>5){
         printf("Error: param->RRmale_to_female_trans is outside expected range [0.33,5]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-
-    for (icd4=0;icd4<NCD4;icd4++){
-        if (param->RRCD4[icd4]<0 || param->RRCD4[icd4]>10){
+    for(icd4=0;icd4<NCD4;icd4++){
+        if(param->RRCD4[icd4]<0 || param->RRCD4[icd4]>10){
             printf("Error: param->RRCD4[icd4] is outside expected range [0,10]\nExiting\n");
             printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
             fflush(stdout);
             exit(1);
         }
     }
-
-    if (param->SPVL_beta_k<0.9 || param->SPVL_beta_k>1.2){
+    if(param->SPVL_beta_k<0.9 || param->SPVL_beta_k>1.2){
         printf("Error: param->SPVL_beta_k =%lf is outside expected range [0.9,1.2]\nExiting\n",param->SPVL_beta_k);
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-
-    if (param->SPVL_beta_50<5000 || param->SPVL_beta_50>50000){
+    if(param->SPVL_beta_50<5000 || param->SPVL_beta_50>50000){
         printf("Error: param->SPVL_beta_50 is outside expected range [5000,50000]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-
-    if (param->RR_ART_INITIAL<0 || param->RR_ART_INITIAL>1){
+    if(param->RR_ART_INITIAL<0 || param->RR_ART_INITIAL>1){
         printf("Error: param->RR_ART_INITIAL is outside expected range [0,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->RR_ART_VS<0 || param->RR_ART_VS>1){
+    if(param->RR_ART_VS<0 || param->RR_ART_VS>1){
         printf("Error: param->RR_ART_VS is outside expected range [0,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->RR_ART_VU<0 || param->RR_ART_VU>1){
+    if(param->RR_ART_VU<0 || param->RR_ART_VU>1){
         printf("Error: param->RR_ART_VU is outside expected range [0,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->RR_ART_INITIAL < param->RR_ART_VS){
+    if(param->RR_ART_INITIAL < param->RR_ART_VS){
         printf("Error: param->RR_ART_VS is bigger than param->RR_ART_INITIAL.\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->RR_ART_VU < param->RR_ART_VS){
+    if(param->RR_ART_VU < param->RR_ART_VS){
         printf("Error: param->RR_ART_VS is bigger than param->RR_ART_VU.\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-
-
-    if (param->min_dur_acute<0 || param->min_dur_acute>1){
+    if(param->min_dur_acute<0 || param->min_dur_acute>1){
         printf("Error: param->min_dur_acute is outside expected range [0,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->max_dur_acute<0 || param->max_dur_acute>2){
+    if(param->max_dur_acute<0 || param->max_dur_acute>2){
         printf("Error: param->max_dur_acute is outside expected range [0,2]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->min_dur_acute > param->max_dur_acute){
+    if(param->min_dur_acute > param->max_dur_acute){
         printf("Error: param->min_dur_acute is bigger than param->max_dur_acute.\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-
-    for (spvl=0; spvl<NSPVL; spvl++){
-        if (param->p_initial_cd4_gt500[spvl]<0 || param->p_initial_cd4_gt500[spvl]>1){
+    for(spvl=0; spvl<NSPVL; spvl++){
+        if(param->p_initial_cd4_gt500[spvl]<0 || param->p_initial_cd4_gt500[spvl]>1){
             printf("Error:param->p_initial_cd4_gt500[spvl] is outside expected range [0,1]\nExiting\n");
             printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
             fflush(stdout);
             exit(1);
         }
-        if (param->p_initial_cd4_350_500[spvl]<0 || param->p_initial_cd4_350_500[spvl]>1){
+        if(param->p_initial_cd4_350_500[spvl]<0 || param->p_initial_cd4_350_500[spvl]>1){
             printf("Error:param->p_initial_cd4_350_500[spvl] is outside expected range [0,1]\nExiting\n");
             printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
             fflush(stdout);
             exit(1);
         }
-        if (param->p_initial_cd4_200_350[spvl]<0 || param->p_initial_cd4_200_350[spvl]>1){
+        if(param->p_initial_cd4_200_350[spvl]<0 || param->p_initial_cd4_200_350[spvl]>1){
             printf("Error:param->p_initial_cd4_200_350[spvl] is outside expected range [0,1]\nExiting\n");
             printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
             fflush(stdout);
             exit(1);
         }
-        if (param->p_initial_cd4_lt200[spvl]<0 || param->p_initial_cd4_lt200[spvl]>1){
+        if(param->p_initial_cd4_lt200[spvl]<0 || param->p_initial_cd4_lt200[spvl]>1){
             printf("Error:param->p_initial_cd4_lt200[spvl] is outside expected range [0,1]\nExiting\n");
             printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
             fflush(stdout);
             exit(1);
         }
     }
-
-
-    if (param->initial_SPVL_mu<0 || param->initial_SPVL_mu>5){
+    if(param->initial_SPVL_mu<0 || param->initial_SPVL_mu>5){
         printf("Error: param->initial_SPVL_mu is outside expected range [0,5]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->initial_SPVL_sigma<0 || param->initial_SPVL_sigma>2){
+    if(param->initial_SPVL_sigma<0 || param->initial_SPVL_sigma>2){
         printf("Error: param->initial_SPVL_sigma is outside expected range [0,2]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->SPVL_sigma_M<0.0 || param->SPVL_sigma_M>1.0){
+    if(param->SPVL_sigma_M<0.0 || param->SPVL_sigma_M>1.0){
         printf("Error: param->SPVL_sigma_M is outside expected range [0.01,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->SPVL_sigma_E<0.01 || param->SPVL_sigma_E>0.9){
+    if(param->SPVL_sigma_E<0.01 || param->SPVL_sigma_E>0.9){
         printf("Error: param->SPVL_sigma_E is outside expected range [0.01,0.9]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-
     /* Note that the first index icd4 is the true cd4, and the other index jcd4 is the measured cd4. */
-    for (icd4=0; icd4<NCD4; icd4++){
-        for (jcd4=0; jcd4<NCD4; jcd4++){
+    for(icd4=0; icd4<NCD4; icd4++){
+        for(jcd4=0; jcd4<NCD4; jcd4++){
             /* temp converts back from cumulative probability to normal probability. */
-            if (jcd4==0)
+            if(jcd4==0)
                 temp = param->cumulative_p_misclassify_cd4[icd4][jcd4];
             else
                 temp = param->cumulative_p_misclassify_cd4[icd4][jcd4] - param->cumulative_p_misclassify_cd4[icd4][jcd4-1];
-
             /* Probability of correct classification - should be high: */
-            if (icd4==jcd4){
-                if (temp<0.8||temp>1.0){
+            if(icd4==jcd4){
+                if(temp<0.8||temp>1.0){
                     printf("Error:param->cumulative_p_misclassify_cd4[icd4][icd4] is outside expected range [0.8,1.0]\nExiting\n");
                     printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
                     fflush(stdout);
                     exit(1);
                 }
-            }
-            /* Probability of incorrect classification - should be low: */
-            else{
+            }else{
+                /* Probability of incorrect classification - should be low: */
                 if(temp < 0.0 || temp > 0.2){
                     printf("Error:param->cumulative_p_misclassify_cd4[icd4][jcd4] is outside expected range [0.0,0.2]\nExiting\n");
                     printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
@@ -1724,11 +1857,9 @@ void check_if_parameters_plausible(parameters *param){
             }
         }
     }
-
-
-    for (icd4=0; icd4<NCD4; icd4++){
-        for (spvl=0; spvl<NSPVL; spvl++){
-            if (param->time_hiv_event[icd4][spvl]<0.0 || param->time_hiv_event[icd4][spvl]>18){
+    for(icd4=0; icd4<NCD4; icd4++){
+        for(spvl=0; spvl<NSPVL; spvl++){
+            if(param->time_hiv_event[icd4][spvl]<0.0 || param->time_hiv_event[icd4][spvl]>18){
                 printf("Error: param->time_hiv_event[icd4=%i][spvl=%i][0]=%f is outside expected range [0.25,18]\nExiting\n",icd4,spvl,param->time_hiv_event[icd4][spvl]);
                 printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
                 fflush(stdout);
@@ -1736,43 +1867,36 @@ void check_if_parameters_plausible(parameters *param){
             }
         }
     }
-
-    for (icd4=0; icd4<NCD4; icd4++){
-        if (param->CoxPH_SPVL_RR_CD4progression[icd4]<1.0 || param->CoxPH_SPVL_RR_CD4progression[icd4]>3.5){
+    for(icd4=0; icd4<NCD4; icd4++){
+        if(param->CoxPH_SPVL_RR_CD4progression[icd4]<1.0 || param->CoxPH_SPVL_RR_CD4progression[icd4]>3.5){
             printf("Error: param->CoxPH_SPVL_RR_CD4progression[icd4=%i]=%f is outside expected range [1.0,3.5]\nExiting\n",icd4,param->CoxPH_SPVL_RR_CD4progression[icd4]);
             printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
             fflush(stdout);
             exit(1);
         }
     }
-
-
-    if (param->factor_for_slower_progression_ART_VU<0 || param->factor_for_slower_progression_ART_VU>5){
+    if(param->factor_for_slower_progression_ART_VU<0 || param->factor_for_slower_progression_ART_VU>5){
         printf("Error: param->factor_for_slower_progression_ART_VU is outside expected range [0,5]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-
-
-
-    if (param->prop_compromise_from_males<0 || param->prop_compromise_from_males>1){
+    if(param->prop_compromise_from_males<0 || param->prop_compromise_from_males>1){
         printf("Error:param->prop_compromise_from_males is outside expected range [0,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->assortativity<0 || param->assortativity>1){
+    if(param->assortativity<0 || param->assortativity>1){
         printf("Error:param->assortativity is outside expected range [0,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-
-    for (g=0; g<N_GENDER; g++){
-        for (ag=0; ag<N_AGE; ag++){
-            for (bg=0; bg<N_AGE; bg++){
-                if (param->p_age_per_gender[g][ag][bg]<0 || param->p_age_per_gender[g][ag][bg]>1){
+    for(g=0; g<N_GENDER; g++){
+        for(ag=0; ag<N_AGE; ag++){
+            for(bg=0; bg<N_AGE; bg++){
+                if(param->p_age_per_gender[g][ag][bg]<0 || param->p_age_per_gender[g][ag][bg]>1){
                     printf("Error:param->p_age_per_gender[g][ag][bg]=%lf is outside expected range [0,1]\nExiting\n",param->p_age_per_gender[g][ag][bg]);
                     printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
                     fflush(stdout);
@@ -1781,146 +1905,137 @@ void check_if_parameters_plausible(parameters *param){
             }
         }
     }
-
-
-    if (param->time_to_background_HIVtestNOW<0.2 || param->time_to_background_HIVtestNOW>6.5){
+    if(param->time_to_background_HIVtestNOW<0.2 || param->time_to_background_HIVtestNOW>6.5){
         printf("Error:param->time_to_background_HIVtestNOW is outside expected range [0.2,6.5] years\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->time_to_background_HIVtest_maxval<1 || param->time_to_background_HIVtest_maxval>20){
+    if(param->time_to_background_HIVtest_maxval<1 || param->time_to_background_HIVtest_maxval>20){
         printf("Error:param->time_to_background_HIVtest_maxval is outside expected range [1,20] years\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->time_to_background_HIVtest_exponent<0 || param->time_to_background_HIVtest_exponent>10){
+    if(param->time_to_background_HIVtest_exponent<0 || param->time_to_background_HIVtest_exponent>10){
         printf("Error:param->time_to_background_HIVtest_exponent is outside expected range [0,10]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->time_to_background_HIVtest_midpoint<2 || param->time_to_background_HIVtest_midpoint>15){
+    if(param->time_to_background_HIVtest_midpoint<2 || param->time_to_background_HIVtest_midpoint>15){
         printf("Error:param->time_to_background_HIVtest_midpoint is outside expected range [2,15] years\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-
-    if (param->HIV_rapid_test_sensitivity_CHIPS<0.5 || param->HIV_rapid_test_sensitivity_CHIPS>1){
+    if(param->HIV_rapid_test_sensitivity_CHIPS<0.5 || param->HIV_rapid_test_sensitivity_CHIPS>1){
         printf("Error:param->HIV_rapid_test_sensitivity_CHIPS is outside expected range [0.5,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-
-    if (param->p_collect_hiv_test_results_cd4_over200<0 || param->p_collect_hiv_test_results_cd4_over200>1){
+    if(param->p_collect_hiv_test_results_cd4_over200<0 || param->p_collect_hiv_test_results_cd4_over200>1){
         printf("Error:param->p_collect_hiv_test_results_cd4_over200 is outside expected range [0,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->p_collect_hiv_test_results_cd4_under200<0 || param->p_collect_hiv_test_results_cd4_under200>1){
+    if(param->p_collect_hiv_test_results_cd4_under200<0 || param->p_collect_hiv_test_results_cd4_under200>1){
         printf("Error:param->p_collect_hiv_test_results_cd4_under200 is outside expected range [0,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->p_collect_hiv_test_results_cd4_over200 > param->p_collect_hiv_test_results_cd4_under200){
+    if(param->p_collect_hiv_test_results_cd4_over200 > param->p_collect_hiv_test_results_cd4_under200){
         printf("Error: param->p_collect_hiv_test_results_cd4_over200 is bigger than param->p_collect_hiv_test_results_cd4_under200.\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-
-    if (param->p_collect_cd4_test_results_cd4_nonpopart<0 || param->p_collect_cd4_test_results_cd4_nonpopart>1){
+    if(param->p_collect_cd4_test_results_cd4_nonpopart<0 || param->p_collect_cd4_test_results_cd4_nonpopart>1){
         printf("Error:param->p_collect_cd4_test_results_cd4_nonpopart is outside expected range [0,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->p_collect_cd4_test_results_cd4_popartYEAR1<0 || param->p_collect_cd4_test_results_cd4_popartYEAR1>1){
+    if(param->p_collect_cd4_test_results_cd4_popartYEAR1<0 || param->p_collect_cd4_test_results_cd4_popartYEAR1>1){
         printf("Error:param->p_collect_cd4_test_results_cd4_popartYEAR1 is outside expected range [0,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->p_collect_cd4_test_results_cd4_popartYEAR2onwards<0 || param->p_collect_cd4_test_results_cd4_popartYEAR2onwards>1){
+    if(param->p_collect_cd4_test_results_cd4_popartYEAR2onwards<0 || param->p_collect_cd4_test_results_cd4_popartYEAR2onwards>1){
         printf("Error:param->p_collect_cd4_test_results_cd4_popartYEAR2onwards is outside expected range [0,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-
-    if (param->p_leaves_earlyart_cd4_over200_if_not_die_early<0 || param->p_leaves_earlyart_cd4_over200_if_not_die_early>1){
+    if(param->p_leaves_earlyart_cd4_over200_if_not_die_early<0 || param->p_leaves_earlyart_cd4_over200_if_not_die_early>1){
         printf("Error:param->p_leaves_earlyart_cd4_over200_if_not_die_early is outside expected range [0,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->p_leaves_earlyart_cd4_under200_if_not_die_early<0 || param->p_leaves_earlyart_cd4_under200_if_not_die_early>1){
+    if(param->p_leaves_earlyart_cd4_under200_if_not_die_early<0 || param->p_leaves_earlyart_cd4_under200_if_not_die_early>1){
         printf("Error:param->p_leaves_earlyart_cd4_under200_if_not_die_early is outside expected range [0,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-
-    if (param->p_leaves_earlyart_cd4_under200_if_not_die_early > param->p_leaves_earlyart_cd4_over200_if_not_die_early){
+    if(param->p_leaves_earlyart_cd4_under200_if_not_die_early > param->p_leaves_earlyart_cd4_over200_if_not_die_early){
         printf("Error: param->p_leaves_earlyart_cd4_under200_if_not_die_early is bigger than param->p_leaves_earlyart_cd4_over200_if_not_die_early.\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-
-    if (param->p_becomes_vs_after_earlyart_if_not_die_early_or_leave<0 || param->p_becomes_vs_after_earlyart_if_not_die_early_or_leave>1){
+    if(param->p_becomes_vs_after_earlyart_if_not_die_early_or_leave<0 || param->p_becomes_vs_after_earlyart_if_not_die_early_or_leave>1){
         printf("Error:param->p_becomes_vs_after_earlyart_if_not_die_early_or_leave is outside expected range [0,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->p_stays_virally_suppressed<0 || param->p_stays_virally_suppressed>1){
+    if(param->p_stays_virally_suppressed<0 || param->p_stays_virally_suppressed>1){
         printf("Error:param->p_stays_virally_suppressed is outside expected range [0,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->p_stops_virally_suppressed<0 || param->p_stops_virally_suppressed>1){
+    if(param->p_stops_virally_suppressed<0 || param->p_stops_virally_suppressed>1){
         printf("Error:param->p_stops_virally_suppressed is outside expected range [0,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->p_vu_becomes_virally_suppressed<0 || param->p_vu_becomes_virally_suppressed>1){
+    if(param->p_vu_becomes_virally_suppressed<0 || param->p_vu_becomes_virally_suppressed>1){
         printf("Error:param->p_vu_becomes_virally_suppressed is outside expected range [0,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    for (chips_round=0; chips_round<NCHIPSROUNDS; chips_round++){
-        if (param->p_popart_to_cascade[chips_round]<0 || param->p_popart_to_cascade[chips_round]>1){
+    for(chips_round=0; chips_round<NCHIPSROUNDS; chips_round++){
+        if(param->p_popart_to_cascade[chips_round]<0 || param->p_popart_to_cascade[chips_round]>1){
             printf("Error:param->p_popart_to_cascade[%i] is outside expected range [0,1]\nExiting\n",chips_round);
             printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
             fflush(stdout);
             exit(1);
         }
     }
-    if (param->p_circ_nonpopart<0 || param->p_circ_nonpopart>1){
+    if(param->p_circ_nonpopart<0 || param->p_circ_nonpopart>1){
         printf("Error:param->p_circ_nonpopart is outside expected range [0,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-
-    if (param->chips_params->n_timesteps_per_round_posttrial<24 || param->chips_params->n_timesteps_per_round_posttrial>=96){
+    if(param->chips_params->n_timesteps_per_round_posttrial<24 || param->chips_params->n_timesteps_per_round_posttrial>=96){
         printf("Error:param->chips_params->n_timesteps_per_round_posttrial =%d is outside expected range [24,95] weeks (0.5-2yrs)\n. Note that if you want a CHiPs round to last 2 years or more then you must increase the size of param->chips_params->prop_tested_by_chips_per_timestep. Exiting\n",param->chips_params->n_timesteps_per_round_posttrial);
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    for (g=0; g<N_GENDER;g++){
-        for (ac = 0; ac<(MAX_AGE-AGE_CHIPS+1); ac++){
-            if (param->chips_params->prop_tested_by_chips_in_round_posttrial[g][ac]<0 || param->chips_params->prop_tested_by_chips_in_round_posttrial[g][ac]>1){
+    for(g=0; g<N_GENDER; g++){
+        for(ac = 0; ac<(MAX_AGE-AGE_CHIPS+1); ac++){
+            if(param->chips_params->prop_tested_by_chips_in_round_posttrial[g][ac]<0 || param->chips_params->prop_tested_by_chips_in_round_posttrial[g][ac]>1){
                 printf("Error:param->chips_params->prop_tested_by_chips_in_round_posttrial[%i][%i] = %lf is outside expected range [0,1]\nExiting\n",g,ac,param->chips_params->prop_tested_by_chips_in_round_posttrial[g][ac]);
                 printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
                 fflush(stdout);
@@ -1928,9 +2043,8 @@ void check_if_parameters_plausible(parameters *param){
             }
         }
     }
-
-    for(chips_timestep=0; chips_timestep<param->chips_params->n_timesteps_per_round_posttrial;chips_timestep++){
-        for (g=0; g<N_GENDER;g++){
+    for(chips_timestep=0; chips_timestep<param->chips_params->n_timesteps_per_round_posttrial; chips_timestep++){
+        for(g=0; g<N_GENDER; g++){
             for (ac = 0; ac<(MAX_AGE-AGE_CHIPS+1); ac++){
                 if (param->chips_params->prop_tested_by_chips_per_timestep_posttrial[g][ac][chips_timestep]<0 || param->chips_params->prop_tested_by_chips_per_timestep_posttrial[g][ac][chips_timestep]>1){
                     printf("Error:param->chips_params->prop_tested_by_chips_per_timestep_posttrial[%i][%i][%i] = %lf is outside expected range [0,1]\nExiting\n",g,ac,chips_timestep,param->chips_params->prop_tested_by_chips_per_timestep_posttrial[g][ac][chips_timestep]);
@@ -1941,27 +2055,23 @@ void check_if_parameters_plausible(parameters *param){
             }
         }
     }
-
-
-    for (chips_round=0; chips_round<NCHIPSROUNDS; chips_round++){
-        if (param->chips_params->n_timesteps_per_round[chips_round]<1 || param->chips_params->n_timesteps_per_round[chips_round]>=96){
+    for(chips_round=0; chips_round<NCHIPSROUNDS; chips_round++){
+        if(param->chips_params->n_timesteps_per_round[chips_round]<1 || param->chips_params->n_timesteps_per_round[chips_round]>=96){
             printf("Error:param->chips_params->n_timesteps_per_round[%d] =%d is outside expected range [12,95] weeks (0.25-2yrs)\n. Note that if you want a CHiPs round to last 2 years or more then you must increase the size of param->chips_params->prop_tested_by_chips_per_timestep. Exiting\n",chips_round,param->chips_params->n_timesteps_per_round[chips_round]);
             printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
             fflush(stdout);
             exit(1);
         }
-        if (param->p_circ_popart[chips_round]<0 || param->p_circ_popart[chips_round]>1){
+        if(param->p_circ_popart[chips_round]<0 || param->p_circ_popart[chips_round]>1){
             printf("Error:param->p_circ_popart[%i] is outside expected range [0,1]\nExiting\n",chips_round);
             printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
             fflush(stdout);
             exit(1);
         }
-
-
-        for (g=0; g<N_GENDER;g++){
-            for (ac = 0; ac<(MAX_AGE-AGE_CHIPS+1); ac++){
+        for(g=0; g<N_GENDER;g++){
+            for(ac = 0; ac<(MAX_AGE-AGE_CHIPS+1); ac++){
                 //double prop_tested_by_chips_in_round[N_GENDER][MAX_AGE-AGE_CHIPS+1][NCHIPSROUNDS];
-                if (param->chips_params->prop_tested_by_chips_in_round[g][ac][chips_round]<0 || param->chips_params->prop_tested_by_chips_in_round[g][ac][chips_round]>1){
+                if(param->chips_params->prop_tested_by_chips_in_round[g][ac][chips_round]<0 || param->chips_params->prop_tested_by_chips_in_round[g][ac][chips_round]>1){
                     printf("Error:param->chips_params->prop_tested_by_chips_in_round[%i][%i][%i] = %lf is outside expected range [0,1]\nExiting\n",g,ac,chips_round,param->chips_params->prop_tested_by_chips_in_round[g][ac][chips_round]);
                     printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
                     fflush(stdout);
@@ -1969,11 +2079,10 @@ void check_if_parameters_plausible(parameters *param){
                 }
             }
         }
-
         for(chips_timestep=0; chips_timestep<param->chips_params->n_timesteps_per_round[chips_round];chips_timestep++){
-            for (g=0; g<N_GENDER;g++){
-                for (ac = 0; ac<(MAX_AGE-AGE_CHIPS+1); ac++){
-                    if (param->chips_params->prop_tested_by_chips_per_timestep[g][ac][chips_timestep][chips_round]<0 || param->chips_params->prop_tested_by_chips_per_timestep[g][ac][chips_timestep][chips_round]>1){
+            for(g=0; g<N_GENDER;g++){
+                for(ac = 0; ac<(MAX_AGE-AGE_CHIPS+1); ac++){
+                    if(param->chips_params->prop_tested_by_chips_per_timestep[g][ac][chips_timestep][chips_round]<0 || param->chips_params->prop_tested_by_chips_per_timestep[g][ac][chips_timestep][chips_round]>1){
                         printf("Error:param->chips_params->prop_tested_by_chips_per_timestep[%i][%i][%i][%i] = %lf is outside expected range [0,1]\nExiting\n",g,ac,chips_timestep,chips_round,param->chips_params->prop_tested_by_chips_per_timestep[g][ac][chips_timestep][chips_round]);
                         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
                         fflush(stdout);
@@ -1983,18 +2092,17 @@ void check_if_parameters_plausible(parameters *param){
             }
         }
     }
-
-    for (ag=0; ag<N_AGE; ag++){
-        if (param->initial_prop_age[ag]<0 || param->initial_prop_age[ag]>1){
+    for(ag=0; ag<N_AGE; ag++){
+        if(param->initial_prop_age[ag]<0 || param->initial_prop_age[ag]>1){
             printf("Error:param->initial_prop_age[ag] is outside expected range [0,1]\nExiting\n");
             printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
             fflush(stdout);
             exit(1);
         }
     }
-    for (g=0; g<N_GENDER; g++){
-        for (r=0; r<N_RISK; r++){
-            if (param->initial_prop_gender_risk[g][r]<0 || param->initial_prop_gender_risk[g][r]>1){
+    for(g=0; g<N_GENDER; g++){
+        for(r=0; r<N_RISK; r++){
+            if(param->initial_prop_gender_risk[g][r]<0 || param->initial_prop_gender_risk[g][r]>1){
                 printf("Error:param->initial_prop_gender_risk[g][r] is outside expected range [0,1]\nExiting\n");
                 printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
                 fflush(stdout);
@@ -2002,9 +2110,9 @@ void check_if_parameters_plausible(parameters *param){
             }
         }
     }
-    for (g=0; g<N_GENDER; g++){
-        for (r=0; r<N_RISK; r++){
-            if (param->initial_prop_infected_gender_risk[g][r]<0 || param->initial_prop_infected_gender_risk[g][r]>1){
+    for(g=0; g<N_GENDER; g++){
+        for(r=0; r<N_RISK; r++){
+            if(param->initial_prop_infected_gender_risk[g][r]<0 || param->initial_prop_infected_gender_risk[g][r]>1){
                 printf("Error:param->initial_prop_infected_gender_risk[g][r] is outside expected range [0,1]\nExiting\n");
                 printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
                 fflush(stdout);
@@ -2012,118 +2120,117 @@ void check_if_parameters_plausible(parameters *param){
             }
         }
     }
-    for (icd4=0; icd4<NCD4; icd4++){
-        if (param->p_dies_earlyart_cd4[icd4]<0 || param->p_dies_earlyart_cd4[icd4]>1){
+    for(icd4=0; icd4<NCD4; icd4++){
+        if(param->p_dies_earlyart_cd4[icd4]<0 || param->p_dies_earlyart_cd4[icd4]>1){
             printf("Error:param->p_dies_earlyart_cd4[icd4] is outside expected range [0,1]\nExiting\n");
             printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
             fflush(stdout);
             exit(1);
         }
     }
-
-    if (param->t_earlyart_dropout_min[NOTPOPART]<0 || param->t_earlyart_dropout_min[NOTPOPART]>1){
+    if(param->t_earlyart_dropout_min[NOTPOPART]<0 || param->t_earlyart_dropout_min[NOTPOPART]>1){
         printf("Error:param->t_earlyart_dropout_min[NOTPOPART] is outside expected range [0,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_earlyart_dropout_min[POPART]<0 || param->t_earlyart_dropout_min[POPART]>1){
+    if(param->t_earlyart_dropout_min[POPART]<0 || param->t_earlyart_dropout_min[POPART]>1){
         printf("Error:param->t_earlyart_dropout_min[POPART] is outside expected range [0,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_earlyart_dropout_range[NOTPOPART]<0 || param->t_earlyart_dropout_range[NOTPOPART]>1){
+    if(param->t_earlyart_dropout_range[NOTPOPART]<0 || param->t_earlyart_dropout_range[NOTPOPART]>1){
         printf("Error:param->t_earlyart_dropout_range[NOTPOPART] is outside expected range [0,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_earlyart_dropout_range[POPART]<0 || param->t_earlyart_dropout_range[POPART]>1){
+    if(param->t_earlyart_dropout_range[POPART]<0 || param->t_earlyart_dropout_range[POPART]>1){
         printf("Error:param->t_earlyart_dropout_range[POPART] is outside expected range [0,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_dies_earlyart_min[NOTPOPART]<0 || param->t_dies_earlyart_min[NOTPOPART]>1){
+    if(param->t_dies_earlyart_min[NOTPOPART]<0 || param->t_dies_earlyart_min[NOTPOPART]>1){
         printf("Error:param->t_dies_earlyart_min[NOTPOPART] is outside expected range [0,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_dies_earlyart_min[POPART]<0 || param->t_dies_earlyart_min[POPART]>1){
+    if(param->t_dies_earlyart_min[POPART]<0 || param->t_dies_earlyart_min[POPART]>1){
         printf("Error:param->t_dies_earlyart_min[POPART] is outside expected range [0,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_dies_earlyart_range[NOTPOPART]<0 || param->t_dies_earlyart_range[NOTPOPART]>1){
+    if(param->t_dies_earlyart_range[NOTPOPART]<0 || param->t_dies_earlyart_range[NOTPOPART]>1){
         printf("Error:param->t_dies_earlyart_range[NOTPOPART] is outside expected range [0,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_dies_earlyart_range[POPART]<0 || param->t_dies_earlyart_range[POPART]>1){
+    if(param->t_dies_earlyart_range[POPART]<0 || param->t_dies_earlyart_range[POPART]>1){
         printf("Error:param->t_dies_earlyart_range[POPART] is outside expected range [0,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_end_early_art<0 || param->t_end_early_art>1){
+    if(param->t_end_early_art<0 || param->t_end_early_art>1){
         printf("Error:param->t_end_early_art is outside expected range [0,1]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_cd4_retest_min[NOTPOPART]<0 || param->t_cd4_retest_min[NOTPOPART]>10){
+    if(param->t_cd4_retest_min[NOTPOPART]<0 || param->t_cd4_retest_min[NOTPOPART]>10){
         printf("Error:param->t_cd4_retest_min[NOTPOPART] is outside expected range [0,10]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_cd4_retest_min[POPART]<0 || param->t_cd4_retest_min[POPART]>10){
+    if(param->t_cd4_retest_min[POPART]<0 || param->t_cd4_retest_min[POPART]>10){
         printf("Error:param->t_cd4_retest_min[POPART] is outside expected range [0,10]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_cd4_retest_range[NOTPOPART]<0 || param->t_cd4_retest_range[NOTPOPART]>10){
+    if(param->t_cd4_retest_range[NOTPOPART]<0 || param->t_cd4_retest_range[NOTPOPART]>10){
         printf("Error:param->t_cd4_retest_range[NOTPOPART] is outside expected range [0,10]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_cd4_retest_range[POPART]<0 || param->t_cd4_retest_range[POPART]>10){
+    if(param->t_cd4_retest_range[POPART]<0 || param->t_cd4_retest_range[POPART]>10){
         printf("Error:param->t_cd4_retest_range[POPART] is outside expected range [0,10]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_cd4_whenartfirstavail_min<0 || param->t_cd4_whenartfirstavail_min>5){
+    if(param->t_cd4_whenartfirstavail_min<0 || param->t_cd4_whenartfirstavail_min>5){
         printf("Error:param->t_cd4_whenartfirstavail_min is outside expected range [0,5]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_cd4_whenartfirstavail_range<0 || param->t_cd4_whenartfirstavail_range>10){
+    if(param->t_cd4_whenartfirstavail_range<0 || param->t_cd4_whenartfirstavail_range>10){
         printf("Error:param->t_cd4_whenartfirstavail_range is outside expected range [0,10]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_delay_hivtest_to_cd4test_min[NOTPOPART]<0 || param->t_delay_hivtest_to_cd4test_min[NOTPOPART]>5){
+    if(param->t_delay_hivtest_to_cd4test_min[NOTPOPART]<0 || param->t_delay_hivtest_to_cd4test_min[NOTPOPART]>5){
         printf("Error:param->t_delay_hivtest_to_cd4test_min[NOTPOPART] is outside expected range [0,5]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_delay_hivtest_to_cd4test_min[POPART]<0 || param->t_delay_hivtest_to_cd4test_min[POPART]>5){
+    if(param->t_delay_hivtest_to_cd4test_min[POPART]<0 || param->t_delay_hivtest_to_cd4test_min[POPART]>5){
         printf("Error:param->t_delay_hivtest_to_cd4test_min[POPART] is outside expected range [0,5]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_delay_hivtest_to_cd4test_range[NOTPOPART]<0 || param->t_delay_hivtest_to_cd4test_range[NOTPOPART]>10){
+    if(param->t_delay_hivtest_to_cd4test_range[NOTPOPART]<0 || param->t_delay_hivtest_to_cd4test_range[NOTPOPART]>10){
         printf("Error:param->t_delay_hivtest_to_cd4test_range[NOTPOPART] is outside expected range [0,10]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
@@ -2135,31 +2242,25 @@ void check_if_parameters_plausible(parameters *param){
         fflush(stdout);
         exit(1);
     }
-
     // Exponential version
-
-    if (param->t_start_art_mean_non_popart<0 || param->t_start_art_mean_non_popart>10){
+    if(param->t_start_art_mean_non_popart<0 || param->t_start_art_mean_non_popart>10){
         printf("Error:param->t_start_art_mean_non_popart is outside expected range [0,10]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-
     // Biexponential version
-
     for(chips_round=0 ; chips_round<NCHIPSROUNDS ; chips_round++){
-        if (param->n_time_periods_art_popart_per_round[chips_round]<1 || param->n_time_periods_art_popart_per_round[chips_round]>MAX_N_TIME_PERIODS_PER_ROUND){
+        if(param->n_time_periods_art_popart_per_round[chips_round]<1 || param->n_time_periods_art_popart_per_round[chips_round]>MAX_N_TIME_PERIODS_PER_ROUND){
             printf("Error:param->p_start_art_mean_fast_popart is outside expected range [1,%d]\nExiting\n",MAX_N_TIME_PERIODS_PER_ROUND);
             printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
             fflush(stdout);
             exit(1);
         }
     }
-    
     int iround;
     for(iround = 0; iround < NCHIPSROUNDS; iround++){
         for(iquarter = 0; iquarter < param->n_time_periods_art_popart_per_round[iround]; iquarter++){
-
             if(param->t_start_art_mean_fast_popart[iround][iquarter]<0 || param->t_start_art_mean_fast_popart[iround][iquarter]>10){
                 printf("Error:param->t_start_art_mean_fast_popart[%d][%d] is outside expected range [0,10]\nExiting\n", iround, iquarter);
                 printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
@@ -2178,7 +2279,7 @@ void check_if_parameters_plausible(parameters *param){
                 fflush(stdout);
                 exit(1);
             }
-            if (param->p_start_art_mean_fast_popart[iround][iquarter] < 0 || param->p_start_art_mean_fast_popart[iround][iquarter] > 1){
+            if(param->p_start_art_mean_fast_popart[iround][iquarter] < 0 || param->p_start_art_mean_fast_popart[iround][iquarter] > 1){
                 printf("Error:param->p_start_art_mean_fast_popart[%d][%d] is outside expected range [0,1]\nExiting\n",iround, iquarter);
                 printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
                 fflush(stdout);
@@ -2186,300 +2287,284 @@ void check_if_parameters_plausible(parameters *param){
             }
         }
     }
-    
-    if (param->t_end_vs_becomevu_min[NOTPOPART]<0 || param->t_end_vs_becomevu_min[NOTPOPART]>20){
+    if(param->t_end_vs_becomevu_min[NOTPOPART]<0 || param->t_end_vs_becomevu_min[NOTPOPART]>20){
         printf("Error:param->t_end_vs_becomevu_min[NOTPOPART] is outside expected range [0,20]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_end_vs_becomevu_min[POPART]<0 || param->t_end_vs_becomevu_min[POPART]>20){
+    if(param->t_end_vs_becomevu_min[POPART]<0 || param->t_end_vs_becomevu_min[POPART]>20){
         printf("Error:param->t_end_vs_becomevu_min[POPART] is outside expected range [0,20]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_end_vs_becomevu_range[NOTPOPART]<0 || param->t_end_vs_becomevu_range[NOTPOPART]>20){
+    if(param->t_end_vs_becomevu_range[NOTPOPART]<0 || param->t_end_vs_becomevu_range[NOTPOPART]>20){
         printf("Error:param->t_end_vs_becomevu_range[NOTPOPART] is outside expected range [0,20]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_end_vs_becomevu_range[POPART]<0 || param->t_end_vs_becomevu_range[POPART]>20){
+    if(param->t_end_vs_becomevu_range[POPART]<0 || param->t_end_vs_becomevu_range[POPART]>20){
         printf("Error:param->t_end_vs_becomevu_range[POPART] is outside expected range [0,20]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_end_vs_dropout_min[NOTPOPART]<0 || param->t_end_vs_dropout_min[NOTPOPART]>20){
+    if(param->t_end_vs_dropout_min[NOTPOPART]<0 || param->t_end_vs_dropout_min[NOTPOPART]>20){
         printf("Error:param->t_end_vs_dropout_min[NOTPOPART] is outside expected range [0,20]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_end_vs_dropout_min[POPART]<0 || param->t_end_vs_dropout_min[POPART]>20){
+    if(param->t_end_vs_dropout_min[POPART]<0 || param->t_end_vs_dropout_min[POPART]>20){
         printf("Error:param->t_end_vs_dropout_min[POPART] is outside expected range [0,20]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_end_vs_dropout_range[NOTPOPART]<0 || param->t_end_vs_dropout_range[NOTPOPART]>20){
+    if(param->t_end_vs_dropout_range[NOTPOPART]<0 || param->t_end_vs_dropout_range[NOTPOPART]>20){
         printf("Error:param->t_end_vs_dropout_range[NOTPOPART] is outside expected range [0,20]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_end_vs_dropout_range[POPART]<0 || param->t_end_vs_dropout_range[POPART]>100){
+    if(param->t_end_vs_dropout_range[POPART]<0 || param->t_end_vs_dropout_range[POPART]>100){
         printf("Error:param->t_end_vs_dropout_range[POPART] is outside expected range [0,20]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_end_vu_becomevs_min[NOTPOPART]<0 || param->t_end_vu_becomevs_min[NOTPOPART]>20){
+    if(param->t_end_vu_becomevs_min[NOTPOPART]<0 || param->t_end_vu_becomevs_min[NOTPOPART]>20){
         printf("Error:param->t_end_vu_becomevs_min[NOTPOPART] is outside expected range [0,20]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_end_vu_becomevs_min[POPART]<0 || param->t_end_vu_becomevs_min[POPART]>20){
+    if(param->t_end_vu_becomevs_min[POPART]<0 || param->t_end_vu_becomevs_min[POPART]>20){
         printf("Error:param->t_end_vu_becomevs_min[POPART] is outside expected range [0,20]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_end_vu_becomevs_range[NOTPOPART]<0 || param->t_end_vu_becomevs_range[NOTPOPART]>20){
+    if(param->t_end_vu_becomevs_range[NOTPOPART]<0 || param->t_end_vu_becomevs_range[NOTPOPART]>20){
         printf("Error:param->t_end_vu_becomevs_range[NOTPOPART] is outside expected range [0,20]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_end_vu_becomevs_range[POPART]<0 || param->t_end_vu_becomevs_range[POPART]>20){
+    if(param->t_end_vu_becomevs_range[POPART]<0 || param->t_end_vu_becomevs_range[POPART]>20){
         printf("Error:param->t_end_vu_becomevs_range[POPART] is outside expected range [0,20]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_end_vu_dropout_min[NOTPOPART]<0 || param->t_end_vu_dropout_min[NOTPOPART]>20){
+    if(param->t_end_vu_dropout_min[NOTPOPART]<0 || param->t_end_vu_dropout_min[NOTPOPART]>20){
         printf("Error:param->t_end_vu_dropout_min[NOTPOPART] is outside expected range [0,20]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_end_vu_dropout_min[POPART]<0 || param->t_end_vu_dropout_min[POPART]>20){
+    if(param->t_end_vu_dropout_min[POPART]<0 || param->t_end_vu_dropout_min[POPART]>20){
         printf("Error:param->t_end_vu_dropout_min[POPART] is outside expected range [0,20]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_end_vu_dropout_range[NOTPOPART]<0 || param->t_end_vu_dropout_range[NOTPOPART]>20){
+    if(param->t_end_vu_dropout_range[NOTPOPART]<0 || param->t_end_vu_dropout_range[NOTPOPART]>20){
         printf("Error:param->t_end_vu_dropout_range[NOTPOPART] is outside expected range [0,20]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_end_vu_dropout_range[POPART]<0 || param->t_end_vu_dropout_range[POPART]>20){
+    if(param->t_end_vu_dropout_range[POPART]<0 || param->t_end_vu_dropout_range[POPART]>20){
         printf("Error:param->t_end_vu_dropout_range[POPART] is outside expected range [0,20]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_get_vmmc_min[NOTPOPART]<0 || param->t_get_vmmc_min[NOTPOPART]>100){
+    if(param->t_get_vmmc_min[NOTPOPART]<0 || param->t_get_vmmc_min[NOTPOPART]>100){
         printf("Error:param->t_get_vmmc_min[NOTPOPART]= %f is outside expected range [0,100]\nExiting\n",param->t_get_vmmc_min[NOTPOPART]);
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_get_vmmc_min[POPART]<0 || param->t_get_vmmc_min[POPART]>100){
+    if(param->t_get_vmmc_min[POPART]<0 || param->t_get_vmmc_min[POPART]>100){
         printf("Error:param->t_get_vmmc_min[POPART]=%f is outside expected range [0,100] \nExiting\n",param->t_get_vmmc_min[POPART]);
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_get_vmmc_range[NOTPOPART]<0 || param->t_get_vmmc_range[NOTPOPART]>5){
+    if(param->t_get_vmmc_range[NOTPOPART]<0 || param->t_get_vmmc_range[NOTPOPART]>5){
         printf("Error:param->t_get_vmmc_range[NOTPOPART]=%f is outside expected range [0,5]\nExiting\n",param->t_get_vmmc_range[NOTPOPART]);
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_get_vmmc_range[POPART]<0 || param->t_get_vmmc_range[POPART]>5){
+    if(param->t_get_vmmc_range[POPART]<0 || param->t_get_vmmc_range[POPART]>5){
         printf("Error:param->t_get_vmmc_range[POPART] is outside expected range [0,5]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->t_vmmc_healing<0 || param->t_vmmc_healing>0.5){
+    if(param->t_vmmc_healing<0 || param->t_vmmc_healing>0.5){
         printf("Error:param->t_vmmc_healing is outside expected range [0,0.5]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->start_time_hiv<1950 || param->start_time_hiv>1990){
+    if(param->start_time_hiv<1950 || param->start_time_hiv>1990){
         printf("Error:param->start_time_hiv is outside expected range [1950,1990]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->start_time_simul<1900 || param->start_time_simul>1980){
+    if(param->start_time_simul<1900 || param->start_time_simul>1980){
         printf("Error:param->start_time_simul is outside expected range [1900,1980]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->start_time_simul>param->start_time_hiv){
+    if(param->start_time_simul>param->start_time_hiv){
         printf("Error: param->start_time_simul is bigger than param->start_time_hiv.\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->end_time_simul<2000 || param->end_time_simul>2100){
+    if(param->end_time_simul<2000 || param->end_time_simul>2100){
         printf("Error:param->end_time_simul is outside expected range [2000,2100]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->COUNTRY_HIV_TEST_START<1970 || param->COUNTRY_HIV_TEST_START>2010){
+    if(param->COUNTRY_HIV_TEST_START<1970 || param->COUNTRY_HIV_TEST_START>2010){
         printf("Error:param->COUNTRY_HIV_TEST_START is outside expected range [1970,2010]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->COUNTRY_ART_START<1985 || param->COUNTRY_ART_START>2100){
+    if(param->COUNTRY_ART_START<1985 || param->COUNTRY_ART_START>2100){
         printf("Error:param->COUNTRY_ART_START is outside expected range [1985,2015]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->start_time_hiv>param->COUNTRY_HIV_TEST_START){
+    if(param->start_time_hiv>param->COUNTRY_HIV_TEST_START){
         printf("Error: param->start_time_hiv is bigger than param->COUNTRY_HIV_TEST_START.\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->COUNTRY_HIV_TEST_START>param->COUNTRY_ART_START){
+    if(param->COUNTRY_HIV_TEST_START>param->COUNTRY_ART_START){
         printf("Error: param->COUNTRY_HIV_TEST_START is bigger than param->COUNTRY_ART_START.\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-
-    if (param->COUNTRY_CD4_350_START<param->COUNTRY_ART_START || param->COUNTRY_CD4_350_START>param->COUNTRY_CD4_500_START){
+    if(param->COUNTRY_CD4_350_START<param->COUNTRY_ART_START || param->COUNTRY_CD4_350_START>param->COUNTRY_CD4_500_START){
         printf("Error:param->COUNTRY_CD4_350_START is outside expected range [COUNTRY_ART_START,COUNTRY_CD4_500_START]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->COUNTRY_CD4_500_START>2100){
+    if(param->COUNTRY_CD4_500_START>2100){
         printf("Error:param->COUNTRY_CD4_500_START is outside expected range between COUNTRY_CD4_350_START and 2020\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-
-    if (param->COUNTRY_VMMC_START<2005 || param->COUNTRY_VMMC_START>2100){
+    if(param->COUNTRY_VMMC_START<2005 || param->COUNTRY_VMMC_START>2100){
         printf("Error:param->COUNTRY_VMMC_START is outside expected range [2005,2010]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->COUNTRY_HIV_TEST_START>param->COUNTRY_VMMC_START){
+    if(param->COUNTRY_HIV_TEST_START>param->COUNTRY_VMMC_START){
         printf("Error: param->COUNTRY_HIV_TEST_START is bigger than param->COUNTRY_VMMC_START.\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    for (chips_round=0; chips_round<NCHIPSROUNDS; chips_round++){
-        if (param->CHIPS_START_YEAR[chips_round]<2013 || param->CHIPS_START_YEAR[chips_round]>2019){
+    for(chips_round=0; chips_round<NCHIPSROUNDS; chips_round++){
+        if(param->CHIPS_START_YEAR[chips_round]<2013 || param->CHIPS_START_YEAR[chips_round]>2019){
             printf("Error:param->CHIPS_START_YEAR[chips_round]=%i is outside expected range [2013,2016]\nExiting\n",param->CHIPS_START_YEAR[chips_round]);
             printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
             fflush(stdout);
             exit(1);
         }
-        //if (param->COUNTRY_ART_START>param->CHIPS_START_YEAR[chips_round]){
-        //    printf("Error: param->COUNTRY_ART_START is bigger than param->CHIPS_START_YEAR[chips_round].\nExiting\n");
-       //     printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
-       //     fflush(stdout);
-       //     exit(1);
-       // }
-        if (param->CHIPS_END_YEAR[chips_round]<2014 || param->CHIPS_END_YEAR[chips_round]>2020){
+        if(param->CHIPS_END_YEAR[chips_round]<2014 || param->CHIPS_END_YEAR[chips_round]>2020){
             printf("Error:param->CHIPS_END_YEAR[chips_round]=%i is outside expected range [2014,2020]\nExiting\n",param->CHIPS_END_YEAR[chips_round]);
             printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
             fflush(stdout);
             exit(1);
         }
-        if (param->CHIPS_START_YEAR[chips_round]>param->CHIPS_END_YEAR[chips_round]){
+        if(param->CHIPS_START_YEAR[chips_round]>param->CHIPS_END_YEAR[chips_round]){
             printf("Error: param->CHIPS_START_YEAR[chips_round] is bigger than param->CHIPS_END_YEAR[chips_round].\nExiting\n");
             printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
             fflush(stdout);
             exit(1);
         }
-        if (param->CHIPS_END_YEAR[chips_round]>param->end_time_simul){
+        if(param->CHIPS_END_YEAR[chips_round]>param->end_time_simul){
             printf("Error: param->CHIPS_END_YEAR[chips_round] is bigger than param->end_time_simul.\nExiting\n");
             printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
             fflush(stdout);
             exit(1);
         }
-        if (param->CHIPS_START_TIMESTEP[chips_round]<0 || param->CHIPS_START_TIMESTEP[chips_round]>N_TIME_STEP_PER_YEAR){
+        if(param->CHIPS_START_TIMESTEP[chips_round]<0 || param->CHIPS_START_TIMESTEP[chips_round]>N_TIME_STEP_PER_YEAR){
             printf("Error:param->CHIPS_START_TIMESTEP[chips_round] is outside expected range [0,N_TIME_STEP_PER_YEAR]\nHas timestep changed?\nExiting\n");
             printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
             fflush(stdout);
             exit(1);
         }
-        if (param->CHIPS_END_TIMESTEP[chips_round]<0 || param->CHIPS_END_TIMESTEP[chips_round]>N_TIME_STEP_PER_YEAR){
+        if(param->CHIPS_END_TIMESTEP[chips_round]<0 || param->CHIPS_END_TIMESTEP[chips_round]>N_TIME_STEP_PER_YEAR){
             printf("Error:param->CHIPS_END_TIMESTEP[chips_round] is outside expected range [0,%i]\nHas timestep changed?\nExiting\n",N_TIME_STEP_PER_YEAR);
             printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
             fflush(stdout);
             exit(1);
         }
     }
-
-
-    if (param->chips_params->n_timesteps_per_round_posttrial<24 || param->chips_params->n_timesteps_per_round_posttrial>N_TIME_STEP_PER_YEAR){
+    if(param->chips_params->n_timesteps_per_round_posttrial<24 || param->chips_params->n_timesteps_per_round_posttrial>N_TIME_STEP_PER_YEAR){
         printf("Error:param->chips_params->n_timesteps_per_round_posttrial is outside expected range [24,%i]\n",N_TIME_STEP_PER_YEAR);
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->DHS_params->NDHSROUNDS<2 || param->DHS_params->NDHSROUNDS>NDHSROUNDS_MAX){
+    if(param->DHS_params->NDHSROUNDS<2 || param->DHS_params->NDHSROUNDS>NDHSROUNDS_MAX){
         printf("Error:param->DHS_params->NDHSROUNDS is outside expected range [2,%i]\n",NDHSROUNDS_MAX);
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-
-    for (dhs_round=0; dhs_round<param->DHS_params->NDHSROUNDS; dhs_round++){
-        if (param->DHS_params->DHS_YEAR[dhs_round]<2000 || param->DHS_params->DHS_YEAR[dhs_round]>2015){
+    for(dhs_round=0; dhs_round<param->DHS_params->NDHSROUNDS; dhs_round++){
+        if(param->DHS_params->DHS_YEAR[dhs_round]<2000 || param->DHS_params->DHS_YEAR[dhs_round]>2015){
             printf("Error:param->DHS_params->DHS_YEAR[dhs_round] is outside expected range [2000,2015]\n");
             printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
             fflush(stdout);
             exit(1);
         }
     }
-
-
-
-    if (param->initial_population_size<0 || param->initial_population_size>500000){
+    if(param->initial_population_size<0 || param->initial_population_size>500000){
         printf("Error:param->initial_population_size is outside expected range [0,500000]\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-    if (param->initial_population_size>MAX_POP_SIZE){
+    if(param->initial_population_size>MAX_POP_SIZE){
         printf("Error:param->initial_population_size is bigger than MAX_POP_SIZE\nExiting\n");
         printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
         fflush(stdout);
         exit(1);
     }
-
     for(ag=0; ag<N_AGE; ag++){
-        if (param->c_per_gender_within_patch[FEMALE][ag]<0 || param->c_per_gender_within_patch[FEMALE][ag]>20){
+        if(param->c_per_gender_within_patch[FEMALE][ag]<0 || param->c_per_gender_within_patch[FEMALE][ag]>20){
             printf("Error:param->c_per_gender_within_patch[FEMALE][ag] is outside expected range [0,20]\nExiting\n");
             printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
             fflush(stdout);
             exit(1);
         }
     }
-    for (ag=0; ag<N_AGE; ag++){
-        if (param->c_per_gender_within_patch[MALE][ag]<0 || param->c_per_gender_within_patch[MALE][ag]>30){
+    for(ag=0; ag<N_AGE; ag++){
+        if(param->c_per_gender_within_patch[MALE][ag]<0 || param->c_per_gender_within_patch[MALE][ag]>30){
             printf("Error:param->c_per_gender_within_patch[MALE][ag] is outside expected range [0,30]\nExiting\n");
             printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
             fflush(stdout);
@@ -2487,7 +2572,7 @@ void check_if_parameters_plausible(parameters *param){
         }
     }
     for (r=0; r<N_RISK; r++){
-        if (param->relative_number_partnerships_per_risk[r]<0 || param->relative_number_partnerships_per_risk[r]>50){
+        if(param->relative_number_partnerships_per_risk[r]<0 || param->relative_number_partnerships_per_risk[r]>50){
             printf("Error:param->relative_number_partnerships_per_risk[r] is outside expected range [0,50]\nExiting\n");
             printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
             fflush(stdout);
@@ -2495,7 +2580,7 @@ void check_if_parameters_plausible(parameters *param){
         }
     }
     for(r=0 ; r<N_RISK ; r++){
-        if (param->max_n_part_noage[r]<0 || param->max_n_part_noage[r]>20){
+        if(param->max_n_part_noage[r]<0 || param->max_n_part_noage[r]>20){
             printf("Error:param->max_n_part_noage[r] is outside expected range [0,20]\nExiting\n");
             printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
             fflush(stdout);
@@ -2503,7 +2588,7 @@ void check_if_parameters_plausible(parameters *param){
         }
     }
     for(r=0 ; r<N_RISK ; r++){
-        if (param->breakup_scale_lambda_within_patch[r]<0 || param->breakup_scale_lambda_within_patch[r]>40){
+        if(param->breakup_scale_lambda_within_patch[r]<0 || param->breakup_scale_lambda_within_patch[r]>40){
             printf("Error:param->breakup_scale_lambda_within_patch[r=%i]=%6.4lf is outside expected range [0,40]\nExiting\n",r,param->breakup_scale_lambda_within_patch[r]);
             printf("LINE %d; FILE %s\n", __LINE__, __FILE__);
             fflush(stdout);
