@@ -1,18 +1,7 @@
-/*  This file is part of the PopART IBM.
-
-    The PopART IBM is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    The PopART IBM is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with the PopART IBM.  If not, see <http://www.gnu.org/licenses/>.
- */
+/**************************************************************************//**
+ * @file demographics.h
+ * @brief Header file for functions related to demographic processes
+*****************************************************************************/
 
 #ifndef DEMOGRAPHICS_H_
 #define DEMOGRAPHICS_H_
@@ -30,7 +19,7 @@ void update_population_size_new_adult(individual *, population_size *,
     population_size_one_year_age *, stratified_population_size *);
 void update_population_size_death(individual *, population_size *, 
     population_size_one_year_age *, population_size_one_year_age *, 
-    stratified_population_size *, int, age_list_struct *);
+    stratified_population_size *, int);
 void initialize_first_cascade_event_for_new_individual(individual *, double, 
     parameters *, individual ***, long *, long *);
 void update_age_list_new_adult(age_list_struct *, individual *);
