@@ -15,7 +15,7 @@
  * @brief Calculate per-woman fertility rate based on age using UNPD rates
  * 
  * @details Return the rate at which any one woman of age `age` gets pregnant 
- * and has an offspring that will survive until AGE_ADULT.  Note, in the 
+ * and has an offspring that will survive until @ref AGE_ADULT.  Note, in the 
  * simulation it is also checked that the women who get pregnant have at 
  * least one partner at that time.
  * Interpolate fertility rate over time and age.  UNPD fertility data is in 
