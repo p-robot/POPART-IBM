@@ -1,32 +1,13 @@
-/*  This file is part of the PopART IBM.
+/**************************************************************************//**
+ * @file structures.h
+ * @brief Defines main data structures used in the model
+*****************************************************************************/
 
-    The PopART IBM is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    The PopART IBM is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with the PopART IBM.  If not, see <http://www.gnu.org/licenses/>.
- */
 
 #ifndef STRUCTURE_H_
 #define STRUCTURE_H_
 
-
-/************************************************************************/
-/******************************* Includes  ******************************/
-/************************************************************************/
-
-#include "constants.h"
-
-/************************************************************************/
-/*************************Define data structures*************************/
-/************************************************************************/
+#include "constant.h"
 
 /* Envisage desired number of partnerships for an individual to be a function of age, gender,
  * partnership risk (a variable describing some kind of preference for more or less partnerships
@@ -34,20 +15,25 @@
  * In addition, the partner picked will depend on geographical location.
  * We then use these to calculate the probability of each person i being picked */
 
-/* This is a forward declaration of these structures -
- we need this because the two structures are mutually self-referencing. */
+/** @brief Forward declaration of the structure defining an individual
+ * @details Needed because the structure and @ref partnership structure are mutually self-referencing
+ */
 typedef struct individual individual;
+
+/** @brief Forward declaration of the structure defining a partnership between two individuals
+ * @details Needed because the structure and @ref individual structure are mutually self-referencing
+ */
 typedef struct partnership partnership;
 
-
+/** @brief Structure defining a sexual partnership between two individuals
+ * @details Structure partnership contains one pointer to a list of 2 individuals, 
+ * and the time after which break-up occurs (in the absence of death) */
 struct partnership{
-    /* Structure partnership contains one pointer to a list of 2 persons, 
-    and the time after which break-up occurs (in the absence of death): */
     individual* ptr[2];
     int duration_in_time_steps;
 };
 
-
+/** @brief Structure defining an individual */
 struct individual{
     long id; /* Unique identifier for each individual. */
     int gender; /* 0 = M, 1 = F. */
@@ -71,7 +57,6 @@ struct individual{
     int SPVL_cat; /* categorical variable. Derived from SPVL_num_G+SPVL_num_E in function get_spvl_cat(). 4 categories (0="<4"; 1="4-4.5"; 2="4.5-5"; 3=">5"). Use for CD4 progression.  */
     double DEBUGTOTALTIMEHIVPOS; /* For each person measure how long they are HIV+ for so can see population-level distribution of those who die by end of simulation. */
     double time_last_hiv_test;   /* Allows us to count proportion of population tested in last year, last 3 months, ever. */
-
 
     int next_HIV_event; /* -1 if not HIV+. Otherwise this stores the next HIV-biology related event to occur to this person (progression, AIDS death, starting ART because CD4<200). */
     long idx_hiv_pos_progression[2]; /* The indices which locate this individual in the hiv_pos_progression array. The first index is a function of the time to their next event (ie puts them in the group of people having an HIV event at some timestep dt) and the second is their location in this group. */
@@ -133,7 +118,6 @@ struct individual{
     int PC_cohort_index;             /* -1 if not in a cohort. Otherwise if in PC0 this is a number in the range 0..(N_PC0-1).
                                         For PC12N we signify that it is PC12N by making it a number 100,000...(100,000+N_PC12N-1) as there are <100,000 in PC0 in each community.
                                         Similarly for PC24N it is a number 200,000...(200,000_NPC24N-1). */
-
     ////individual *age_list_ptr; /* This is a pointer to the place in the age list where the pointer to this person is (ie if you go to this address you will find a pointer to this structure). */
     ////////////////////////////////////////////////
     /* Do we include the following here:
@@ -152,8 +136,7 @@ struct individual{
     double t_vu; // Time of becoming virally unsuppressed
 };
 
-
-/* structure containing chips-related parameters: */
+/** @brief Structure containing chips-related parameters */
 typedef struct{
     double prop_tested_by_chips_per_timestep[N_GENDER][MAX_AGE-AGE_CHIPS+1][MAX_N_TIMESTEPS_PER_CHIPS_ROUND][NCHIPSROUNDS];
     double prop_tested_by_chips_in_round[N_GENDER][MAX_AGE-AGE_CHIPS+1][NCHIPSROUNDS];
@@ -164,9 +147,9 @@ typedef struct{
     int n_timesteps_per_round_posttrial; /* This is derived from the times e.g. (int) round((CHIPS_YEAR1_END-CHIPS_YEAR1_START)*N_TIME_STEP_PER_YEAR). */
 } chips_param_struct;
 
-
-/* structure containing PC-related parameters. Note that some of these parameters are read in by
- * read_pc_enrolment_params() and the rest by read_pc_future_params() */
+/** @brief Structure containing PC-related parameters.
+ * @details Note that some of these parameters are read in by
+ * @ref read_pc_enrolment_params() and the rest by @ref read_pc_future_params() */
 typedef struct{
     int PC_START_TIMESTEP[NPC_ROUNDS]; /* This represents the timestep when the nth round of PC visits begins. */
     int PC_START_YEAR[NPC_ROUNDS];     /* This represents the  year when the nth round of PC visits begins.
@@ -187,7 +170,7 @@ typedef struct{
     int cohort_size;      /* This is the total number of people in PC0. It equals the sum over age, gender and HIV strata of number_enrolled_in_PC_round[pc_round=0]. */
 } PC_param_struct;
 
-
+/** @brief Structure storing information on DHS rounds */
 typedef struct{
     int NDHSROUNDS;
     int DHS_YEAR[NDHSROUNDS_MAX];
@@ -195,7 +178,7 @@ typedef struct{
 } DHS_param_struct;
 
 
-/* structure 'parameters': */
+/** @brief Structure containing all model parameters */
 typedef struct {
 
     long rng_seed; /* This is the C random seed used for each run. */
@@ -207,7 +190,6 @@ typedef struct {
     double mortality_rate_by_gender_age_slope[N_GENDER][N_AGE_UNPD_MORTALITY];
     //double scale_fertility_param;
     double sex_ratio;     /* Proportion of new sexually active population who are male. */
-
 
     /********** times **********/
     double start_time_hiv;
@@ -366,7 +348,6 @@ typedef struct {
     double p_collect_cd4_test_results_cd4_nonpopart;
     double p_collect_cd4_test_results_cd4_popartYEAR1;
     double p_collect_cd4_test_results_cd4_popartYEAR2onwards;
-
 
     /* Given you've just started ART several events can happen with the following probabilities: */
     double p_dies_earlyart_cd4[NCD4]; /* you die early */
