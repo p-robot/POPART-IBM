@@ -25,38 +25,34 @@ typedef struct individual individual;
  */
 typedef struct partnership partnership;
 
-/** @brief Structure defining a sexual partnership between two individuals
- * @details Structure partnership contains one pointer to a list of 2 individuals, 
- * and the time after which break-up occurs (in the absence of death) */
+/** @brief Structure defining a sexual partnership between two individuals */
 struct partnership{
-    individual* ptr[2];
-    int duration_in_time_steps;
+    individual* ptr[2]; /** Pointer to list of two individuals */
+    int duration_in_time_steps; /** Time after which break-up occurs (in the absence of death) */
 };
 
 /** @brief Structure defining an individual */
 struct individual{
-    long id; /* Unique identifier for each individual. */
-    int gender; /* 0 = M, 1 = F. */
-    double DoB;  /* Date of birth (stored as double). */
-    double DoD;  /* Date of death (stored as double). */
-    //////// think about comparative efficiency of DoB versus age ////////
-
-    int patch_no;
+    long id; /** Unique identifier for each individual */
+    int gender; /** Gender, 0 = @ref MALE, 1 = @ref FEMALE */
+    double DoB;  /** Date of birth (stored as double). */
+    double DoD;  /** Date of death (stored as double). */
+    int patch_no; /** Patch index of individual */
 
     int time_to_delivery; /* -1 = not pregnant ; any positive int = number of time steps to delivery */
     //////// BE CAREFUL THIS IS TIME_STEP DEPENDENT, CHANGE IF TIME_STEP CHANGES ////////
 
-    int HIV_status; /* 0 if uninfected, 1 if infected in acute infection, 2 if infected not in acute infection */
-    int ART_status; /* -1 if never tested positive, 0 if positive but not yet on ART (or dropped out), 1 if on ART for <6 months, 2 if on ART for >=6 months and virally suppressed, 3 if on ART for >=6 months and not virally suppressed. */
-    double t_start_art; /* Time at which the individual first started ART (used in cost-effectiveness) */
-    double t_sc;    /* time at which person seroconverts. Note this is used to check if the person is currently outside the window period of the given HIV test. */
-    int cd4; /* Currently use -2: dead ; -1: uninfected ; 0: CD4>500, 1: CD4 350-500, 2: CD4 200-350, 3: CD4<200. */
-    double SPVL_num_G; /* This is the genetic component of the log10(SPVL) - use for transmissibility and heritability. */
-    double SPVL_num_E; /* This is the environmental component of the log10(SPVL) - use for transmissibility and heritability. SPVL = SPVL_G + SPVL_E. */
-    double SPVL_infector; /* SPVL of infector (allows us to look at heritability) - the regression slope of viral loads V on viral loads of the infectors V’, for the last year. */
-    int SPVL_cat; /* categorical variable. Derived from SPVL_num_G+SPVL_num_E in function get_spvl_cat(). 4 categories (0="<4"; 1="4-4.5"; 2="4.5-5"; 3=">5"). Use for CD4 progression.  */
-    double DEBUGTOTALTIMEHIVPOS; /* For each person measure how long they are HIV+ for so can see population-level distribution of those who die by end of simulation. */
-    double time_last_hiv_test;   /* Allows us to count proportion of population tested in last year, last 3 months, ever. */
+    int HIV_status; /** Code for HIV status, 0 if uninfected, 1 if infected in acute infection, 2 if infected not in acute infection */
+    int ART_status; /** Code for ART status of individual, -1 if never tested positive, 0 if positive but not yet on ART (or dropped out), 1 if on ART for <6 months, 2 if on ART for >=6 months and virally suppressed, 3 if on ART for >=6 months and not virally suppressed. */
+    double t_start_art; /** Time at which the individual first started ART (used in cost-effectiveness) */
+    double t_sc; /** Time at which person seroconverts. Note this is used to check if the person is currently outside the window period of the given HIV test. */
+    int cd4; /** CD4 category; Currently use -2: dead ; -1: uninfected ; 0: CD4>500, 1: CD4 350-500, 2: CD4 200-350, 3: CD4<200. */
+    double SPVL_num_G; /** Genetic component of the log10(SPVL) - use for transmissibility and heritability. */
+    double SPVL_num_E; /** Environmental component of the log10(SPVL) - use for transmissibility and heritability. SPVL = SPVL_G + SPVL_E. */
+    double SPVL_infector; /** SPVL of infector (allows us to look at heritability) - the regression slope of viral loads V on viral loads of the infectors V’, for the last year. */
+    int SPVL_cat; /** SPVL categorical variable. Derived from SPVL_num_G+SPVL_num_E in function get_spvl_cat(). 4 categories (0="<4"; 1="4-4.5"; 2="4.5-5"; 3=">5"). Use for CD4 progression.  */
+    double DEBUGTOTALTIMEHIVPOS; /** For each person measure how long they are HIV+ for so can see population-level distribution of those who die by end of simulation. */
+    double time_last_hiv_test;   /** Time of last HIV test; Allows us to count proportion of population tested in last year, last 3 months, ever. */
 
     int next_HIV_event; /* -1 if not HIV+. Otherwise this stores the next HIV-biology related event to occur to this person (progression, AIDS death, starting ART because CD4<200). */
     long idx_hiv_pos_progression[2]; /* The indices which locate this individual in the hiv_pos_progression array. The first index is a function of the time to their next event (ie puts them in the group of people having an HIV event at some timestep dt) and the second is their location in this group. */
