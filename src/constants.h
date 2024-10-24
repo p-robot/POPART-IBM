@@ -575,7 +575,7 @@ extern const char RISK_GP_NAMES[N_RISK][5];
  * @details @ref UNINFECTED (0), @ref ACUTE (1), @ref CHRONIC (2). */
 #define CHRONIC 2
 
-/** @brief Codes for ART_status of @ref individual
+/** @brief Codes for `ART_status` of @ref individual
  * @details Codes run from -1..6 so 8 events (@ref NARTEVENTS).
  * The following codes are used:\n
  * @ref ARTNEG (-1): If never tested HIV positive (note that this is tested, 
@@ -742,7 +742,7 @@ extern const char RISK_GP_NAMES[N_RISK][5];
  * 0="CD4>500", 1="CD4 350-500", 2="CD4 200-350", 3="CD4 <200". */
 #define CD4_UNINFECTED -1
 
-/** @brief Number of CD3 categories (four)
+/** @brief Number of CD4 categories (four)
  * @details Model includes four CD4 categories 
  * (0=">500", 1="350-500", 2= "200-350", 3="<200").
  * Default is 4. */
