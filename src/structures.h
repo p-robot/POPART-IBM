@@ -7,13 +7,7 @@
 #ifndef STRUCTURE_H_
 #define STRUCTURE_H_
 
-#include "constant.h"
-
-/* Envisage desired number of partnerships for an individual to be a function of age, gender,
- * partnership risk (a variable describing some kind of preference for more or less partnerships
- * independent of age - including if in key population), possibly socio-economic, racial,  etc.
- * In addition, the partner picked will depend on geographical location.
- * We then use these to calculate the probability of each person i being picked */
+#include "constants.h"
 
 /** @brief Forward declaration of the structure defining an individual
  * @details Needed because the structure and @ref partnership structure are mutually self-referencing
@@ -25,7 +19,14 @@ typedef struct individual individual;
  */
 typedef struct partnership partnership;
 
-/** @brief Structure defining a sexual partnership between two individuals */
+/** @brief Structure defining a sexual partnership between two individuals
+ * @details Envisage the desired number of partnerships for an individual to be 
+ * a function of age, gender, partnership risk (a variable describing some
+ * kind of preference for more or less partnerships, independent of age - 
+ * including if in key population), possibly socio-economic, racial,  etc.
+ * In addition, the partner picked will depend on geographical location (in the 
+ * community or in the surrounding area; denoted by the patches in the model).
+ * We then use these to calculate the probability of each person being picked */
 struct partnership{
     individual* ptr[2]; /** Pointer to list of two individuals */
     int duration_in_time_steps; /** Time after which break-up occurs (in the absence of death) */
@@ -33,103 +34,270 @@ struct partnership{
 
 /** @brief Structure defining an individual */
 struct individual{
-    long id; /** Unique identifier for each individual */
-    int gender; /** Gender, 0 = @ref MALE, 1 = @ref FEMALE */
-    double DoB;  /** Date of birth (stored as double). */
-    double DoD;  /** Date of death (stored as double). */
-    int patch_no; /** Patch index of individual */
-
-    int time_to_delivery; /* -1 = not pregnant ; any positive int = number of time steps to delivery */
-    //////// BE CAREFUL THIS IS TIME_STEP DEPENDENT, CHANGE IF TIME_STEP CHANGES ////////
-
-    int HIV_status; /** Code for HIV status, 0 if uninfected, 1 if infected in acute infection, 2 if infected not in acute infection */
-    int ART_status; /** Code for ART status of individual, -1 if never tested positive, 0 if positive but not yet on ART (or dropped out), 1 if on ART for <6 months, 2 if on ART for >=6 months and virally suppressed, 3 if on ART for >=6 months and not virally suppressed. */
-    double t_start_art; /** Time at which the individual first started ART (used in cost-effectiveness) */
-    double t_sc; /** Time at which person seroconverts. Note this is used to check if the person is currently outside the window period of the given HIV test. */
-    int cd4; /** CD4 category; Currently use -2: dead ; -1: uninfected ; 0: CD4>500, 1: CD4 350-500, 2: CD4 200-350, 3: CD4<200. */
-    double SPVL_num_G; /** Genetic component of the log10(SPVL) - use for transmissibility and heritability. */
-    double SPVL_num_E; /** Environmental component of the log10(SPVL) - use for transmissibility and heritability. SPVL = SPVL_G + SPVL_E. */
-    double SPVL_infector; /** SPVL of infector (allows us to look at heritability) - the regression slope of viral loads V on viral loads of the infectors V’, for the last year. */
-    int SPVL_cat; /** SPVL categorical variable. Derived from SPVL_num_G+SPVL_num_E in function get_spvl_cat(). 4 categories (0="<4"; 1="4-4.5"; 2="4.5-5"; 3=">5"). Use for CD4 progression.  */
-    double DEBUGTOTALTIMEHIVPOS; /** For each person measure how long they are HIV+ for so can see population-level distribution of those who die by end of simulation. */
-    double time_last_hiv_test;   /** Time of last HIV test; Allows us to count proportion of population tested in last year, last 3 months, ever. */
-
-    int next_HIV_event; /* -1 if not HIV+. Otherwise this stores the next HIV-biology related event to occur to this person (progression, AIDS death, starting ART because CD4<200). */
-    long idx_hiv_pos_progression[2]; /* The indices which locate this individual in the hiv_pos_progression array. The first index is a function of the time to their next event (ie puts them in the group of people having an HIV event at some timestep dt) and the second is their location in this group. */
-    /* for the above the origin of time is start_time_hiv */
-    long debug_last_hiv_event_index; /* Stores the first index of idx_hiv_pos_progression for the last HIV progression event to happen - so can check that two HIV progression events do not happen to the same person in the same timestep. */
-
-    int next_cascade_event; /* Stores the next testing/treatment cascade event to occur to this person (HIV test, CD4 test if in care but not on ART, start ART, stop ART, restart ART). First event is necessarily an HIV test. */ 
-    long idx_cascade_event[2]; /* The indices which locate this individual in the cascade_event array. The first index is a function of the time to their next event (ie puts them in the group of people having a cascade event at some timestep dt) and the second is their location in this group. */    
-    /* for the above the origin of time is COUNTRY_HIV_TEST_START */
-    long debug_last_cascade_event_index; /* Stores the first index of idx_cascade_event for the last cascade event to happen - so can check that two cascade events do not happen to the same person in the same timestep. */
-
-    int circ; /* 0 if uncircumcised, 1 if VMMC circumcised (and healed), 2 if VMMC during healing period, 3 if traditional circumcised (assumed at birth/youth). */
-    double t_vmmc; /* Time at which an individual undergoes the VMMC procedure (used in cost-effectiveness) */
-    long idx_vmmc_event[2];   /* The indices which locate this individual in the vmmc_event array. The first index is a function of the time to their next event (ie puts them in the group of people having a VMMC event at some timestep dt) and the second is their location in this group. */
-    long debug_last_vmmc_event_index; /* Stores the first index of idx_vmmc_event for the last vmmc event to happen - so can check that two vmmc events do not happen to the same person in the same timestep. */
-
-    // Pangea outputs for Olli
-    double PANGEA_t_prev_cd4stage; /* Time at which an individual last moved CD4 stage. Allows us to linearly estimate CD4 at ART initiation. */
-    double PANGEA_t_next_cd4stage; /* Time at which individual will move to the next CD4 stage. Used with PANGEA_t_prev_cd4stage. */  
-    double PANGEA_cd4atdiagnosis;  /* Based on t_next_cd4stage, estimate CD4 at diagnosis. */
-    double PANGEA_cd4atfirstART;   /* Based on t_next_cd4stage, estimate CD4 at start of ART. */
+    /** @brief Unique identifier for each individual */
+    long id;
+    
+    /** @brief Gender of individual @details See @ref MALE, @ref FEMALE */
+    int gender;
+    
+    /** @brief Date of birth */
+    double DoB;
+    
+    /** @brief Date of death */
+    double DoD;
+    
+    /** @brief Patch index of individual */
+    int patch_no;
+    
+    /** @brief Number of timesteps until pregnant women delivers
+    @details Coded as -1 for not pregnant */
+    int time_to_delivery;
+    
+    /** @brief Code for HIV status of individual
+    @details See @ref UNINFECTED (0), @ref ACUTE (1) infection,
+    @ref CHRONIC (2) infection */
+    int HIV_status;
+    
+    /** @brief Code for ART status of individual.
+     * @details The following codes are used:\n
+     * @ref ARTNEG (-1): If never tested HIV positive (note that this is tested, 
+     * not serostatus).\n
+     * @ref ARTNAIVE (0): Never been on ART\n
+     * @ref EARLYART (1): First few weeks/months before achieve viral suppression. 
+     *  Higher mortality and drop-out rate.\n
+     * @ref LTART_VS (2): longer-term ART and Virally Suppressed (so low transmission, 
+     *  no CD4 progression or drug resistance).\n
+     * @ref LTART_VU (3): Longer-term ART and Virally Unsuppressed (so higher transmission, 
+     *  could have (but not currently) CD4 progression and drug resistance).\n
+     * @ref ARTDROPOUT (4): Has been on ART before but not currently.\n
+     * @ref CASCADEDROPOUT (5): Dropped out of HIV care cascade prior to ever starting ART \n
+     * @ref ARTDEATH (6): Signals that the person needs to be removed as they die while on ART.\n
+     * Note that these are states and not processes. */
+    int ART_status;
+    
+    /** @brief Time at which the individual first started ART
+    @details Used in cost-effectiveness outputs */
+    double t_start_art;
+    
+    /** @brief Time at which person seroconverts
+    @details Note this is used to check if the person is currently outside the 
+    window period of the given HIV test. */
+    double t_sc;
+    
+    /** @brief CD4 category of individual
+     * @details Currently use @ref DEAD (-2) ; @ref CD4_UNINFECTED (-1) ; 0: CD4>500,
+     *  1: CD4 350-500, 2: CD4 200-350, 3: CD4<200. */
+    int cd4;
+    
+    /** @brief Genetic component of the log10(SPVL)
+     * @details Used for transmissibility and heritability. */
+    double SPVL_num_G;
+    
+    /** @brief Environmental component of the log10(SPVL)
+     * @details Used for transmissibility and heritability. SPVL = SPVL_G + SPVL_E. */
+    double SPVL_num_E;
+    
+    /** @brief SPVL of infector\
+     * @details Allowing investigation of heritability - the regression slope of viral 
+     * loads V on viral loads of the infectors V’, for the last year. */
+    double SPVL_infector;
+    
+    /** @brief SPVL categorical variable
+     * @details Derived from `SPVL_num_G+SPVL_num_E` in function @ref get_spvl_cat(). 
+     * Four categories: 0="<4"; 1="4-4.5"; 2="4.5-5"; 3=">5". Use for CD4 progression.*/
+    int SPVL_cat;
+    
+    /** @brief For each person measure how long they are HIV-positive
+     * @details Used to see population-level distribution of those who die by end of simulation.*/
+    double DEBUGTOTALTIMEHIVPOS;
+    
+    /** @brief Time of last HIV test
+     * @details Allows us to count proportion of population tested in last year, 
+     * last 3 months, ever.*/
+    double time_last_hiv_test;
+    
+    /** @brief Categories for the next HIV-biology related event to occur to this individual
+     * @details Events can be CD4 progression, AIDS death, starting ART because CD4<200.
+     * -1 if not HIV-positive*/
+    int next_HIV_event;
+    
+    /** @brief Indices which locate this individual in the `hiv_pos_progression` array
+     * @details The first index is a function of the time to their next event (ie puts them 
+     * in the group of people having an HIV event at some timestep dt) and the second is 
+     * their location in this group; the origin of time is `start_time_hiv`*/
+    long idx_hiv_pos_progression[2];
+    
+    /** @brief First index of `idx_hiv_pos_progression` for the last HIV progression event to happen
+     * @details Used to check that two HIV progression events do not happen to the same person in
+     * the same timestep.*/
+    long debug_last_hiv_event_index;
+    
+    /** @brief Next testing/treatment cascade event to occur to this person
+     * @details Events can be HIV test, CD4 test if in care but not on ART, start ART, stop ART,
+     * restart ART). First event is necessarily an HIV test.*/
+    int next_cascade_event;
+    
+    /** @brief Indices which locate this individual in the `cascade_event` array
+     * @details The first index is a function of the time to their next event (ie puts them in the
+     * group of people having a cascade event at some timestep dt) and the second is their location 
+     * in this group; the origin of time is the parameter `COUNTRY_HIV_TEST_START`*/
+    long idx_cascade_event[2];
+    
+    /** @brief Stores the first index of `idx_cascade_event` for the last cascade event to happen
+     * @details This is used to check that two cascade events do not happen to the same person in
+     * the same timestep.*/
+    long debug_last_cascade_event_index;
+    
+    /** @brief Circumcision status of individual
+     * @details @ref UNCIRC for uncircumcised, @ref UNCIRC_WAITING_VMMC if waiting VMMC
+     * circumcision, @ref VMMC for VMMC circumcision (and healed), @ref VMMC_HEALING if VMMC 
+     * during healing period, @ref TRADITIONAL_MC if traditional circumcised (assumed at
+     * birth/youth). */
+    int circ;
+    
+    /** @brief Time at which an individual undergoes the VMMC procedure
+     * @details This attributed is used withiin cost-effectiveness analyses */
+    double t_vmmc;
+    
+    /** @brief Indices which locate this individual in the `vmmc_event` array
+     * @details The first index is a function of the time to their next event (ie puts them in the
+     * group of people having a VMMC event at some timestep dt) and the second is their location in
+     * this group. */
+    long idx_vmmc_event[2];
+    
+    /** @brief Stores the first index of `idx_vmmc_event` for the last vmmc event to happen
+     * @details Used to check that two vmmc events do not happen to the same person in the same
+     * timestep. */
+    long debug_last_vmmc_event_index;
+    
+    /** @brief Time at which an individual last moved CD4 stage
+     * @details This attribute allows linearly estimating CD4 at ART initiation. */
+    double PANGEA_t_prev_cd4stage;
+    
+    /** @brief Time at which individual will move to the next CD4 stage
+     * @details This attribute is used with `PANGEA_t_prev_cd4stage`. */
+    double PANGEA_t_next_cd4stage;
+    
+    /** @brief Estimated CD4 at diagnosis @details based upon `t_next_cd4stage`. */
+    double PANGEA_cd4atdiagnosis;
+    
+    /** @brief Estimated CD4 at start of ART @details based on `t_next_cd4stage`. */
+    double PANGEA_cd4atfirstART;
+    
+    /** @brief Time of HIV diagnosis */
     double PANGEA_t_diag;
+    
+    /** @brief Date individual first started ART */
     double PANGEA_date_firstARTstart;
+    
+    /** @brief Date individual is first virally suppressed */
     double PANGEA_date_startfirstVLsuppression;
+    
+    /** @brief Date individual first stops being virally suppressed */
     double PANGEA_date_endfirstVLsuppression;
-    /* For debugging HIV cascade: */
-    double DEBUG_cumulative_time_on_ART_VS;    /* Record the time someone spends on ART and VS. Zero if never VS. */
-    double DEBUG_cumulative_time_on_ART_VU;    /* Record the time someone spends on ART and VU. Zero if never VU. */
-    double DEBUG_cumulative_time_on_ART_early; /* Record the time someone spends in early ART. Zero if never starts ART. */
-    double DEBUG_time_of_last_cascade_event;   /* Use to calculate time VS/VU/early. */
+    
+    /** @brief Record of the time someone spends on ART and VS. @details Zero if never VS.*/
+    double DEBUG_cumulative_time_on_ART_VS;
+    
+    /** @brief Record of the time someone spends on ART and VU. @details Zero if never VU.*/
+    double DEBUG_cumulative_time_on_ART_VU;
+    
+    /** @brief Record of the time someone spends in early ART. @details Zero if never starts ART.*/
+    double DEBUG_cumulative_time_on_ART_early;
+    
+    /** @brief Time of last event in the care cascade for this individual
+     * @details Used to calculate time VS/VU/early */
+    double DEBUG_time_of_last_cascade_event;
+    
+    /** @brief Current number of sexual partners of this individual
+     * @details Include sexual partners who are both in or out of the community */
+    int n_partners;
+    
+    /** @brief Array of partnership pairs (with someone in the community) that
+     * this individual is in at a certain time. */
+    partnership* partner_pairs[MAX_PARTNERSHIPS_PER_INDIVIDUAL];
+    
+    /** Current number of HIV-positive partners of this individual
+     * @details Only updated for HIV-negative individuals (who are in the community) */
+    int n_HIVpos_partners;
+    
+    /** @brief Current number of HIV-positive partners of this individual who
+     * are outside of the patch
+     * @details Only updated for HIV-negative individuals (who are in the community) */
+    int n_HIVpos_partners_outside;
+    
+    /** @brief List of the partnership pairs (with someone in the community) with an HIV-positive
+     * partner that this individual is in at a certain time. */
+    partnership * partner_pairs_HIVpos[MAX_PARTNERSHIPS_PER_INDIVIDUAL];
+    
+    /** @brief Group of sexual risk-taking behaviour
+    @details see @ref LOW, @ref MEDIUM, @ref HIGH risk */
+    int sex_risk;
+    
+    /** @brief Maximum number of sexual partners this individual can have at a certain time point
+    (depending on sexual risk taking group) */
+    int max_n_partners;
 
-    int n_partners; /* current number of partners of this individual (who are in OR out of the community) */
-    partnership* partner_pairs[MAX_PARTNERSHIPS_PER_INDIVIDUAL]; /* This is a list of the partnership pairs (with someone in the community) that this individual is in at a certain time. */
+    /** @brief Number of sexual partners living outside the community at a certain time point */
+    int n_partners_outside;
+    
+    /** @brief Index of individual in list of serodiscordant partners
+    @details this is -1 if the individual is in no serodiscordant partnership,
+    otherwise it is the index of this individual in the list
+    `susceptible_in_serodiscordant_partnership` */
+    long idx_serodiscordant;
+    
+    /** @brief Coding for availability of individual for forming sexual partnerships 
+    (based upon maximum number)
+    @details This array is filled in with -1 if the individual is not available for partnership
+    (i.e. `n_partners==max_n_partners`), otherwise it is filled in from 0 to
+    `max_n+partners-n_partners` with the index this individual is at in the list
+    `pop_available_partners` (within its patch/gender/age/risk group) */
+    long idx_available_partner[MAX_PARTNERSHIPS_PER_INDIVIDUAL];
 
-    /* The two following are only updated for HIV- individuals (who are in the community) */
-    int n_HIVpos_partners; /* current number of HIV+ partners of this individual */
-    int n_HIVpos_partners_outside; /* current number of HIV+ partners of this individual who are outside of the patch */
-    partnership * partner_pairs_HIVpos[MAX_PARTNERSHIPS_PER_INDIVIDUAL]; /* This is a list of the partnership pairs (with someone in the community) with an HIV+ partner that this individual is in at a certain time. */
+    /** @brief Number of sexual partners that someone has had in their lifetime. */
+    long n_lifetime_partners;
+    
+    /** @brief Number of sexual partners that someone has had in the outside the patch */
+    long n_lifetime_partners_outside;
+    
+    /** @brief Counts the number of sexual partners that someone has had up to the start of the
+    current year
+    @details Thus `n_lifetime_partners-n_lifetimeminusoneyear_partners` gives the number of 
+    partners in the most recent year. */
+    long n_lifetimeminusoneyear_partners;
+    
+    /** @brief Counts the number of sexual partners that someone has had up to the start of the
+    current year in the outside patch */
+    long n_lifetimeminusoneyear_partners_outside;
 
-    int sex_risk; /* 0, 1, 2 for LOW, MEDIUM, HIGH risk */
-    int max_n_partners; /* maximum number of partners this individual can have at a certain time point */
-    int n_partners_outside; /* number of partners living outside the community at a certain time point */
+    /** @brief Number of sexual partners an individual has had at the start of the current year
+    @details Thus `n_partnersminusoneyear + n_lifetime_partners-n_lifetimeminusoneyear_partners`
+    gives the number of partners in the most recent years (existing + new)*/
+    long n_partnersminusoneyear;
 
-    long idx_serodiscordant; // this is -1 if the individual is in no serodiscordant partnership, otherwise it is the index of this individual in the list susceptible_in_serodiscordant_partnership
-
-    long idx_available_partner[MAX_PARTNERSHIPS_PER_INDIVIDUAL]; // this is filled in with -1 if the individual is not available for partnership (i.e. n_partners==max_n_partners), otherwise it is filled in from 0 to max_n+partners-n_partners with the index this individual is at in the list pop_available_partners (within its patch/gender/age/risk group)
-
-    long n_lifetime_partners;             /* Counts the number of partners that someone has had in their lifetime. */
-    long n_lifetime_partners_outside;             /* same but for partners outside the patch */
-    long n_lifetimeminusoneyear_partners; /* Counts the number of partners that someone has had up to the start of the current year. Thus n_lifetime_partners-n_lifetimeminusoneyear_partners gives the number of partners in the most recent year. */ 
-    long n_lifetimeminusoneyear_partners_outside; /* same but for partners outside the patch */
-
-    long n_partnersminusoneyear; /* Counts the number of partners that someone has had at the start of the current year. Thus n_partnersminusoneyear + n_lifetime_partners-n_lifetimeminusoneyear_partners gives the number of partners in the most recent years (existing + new)*/
-
-    int VISITED_BY_CHIPS_THISROUND;  /* Records whether a person has been visited by CHiPs (=1) or not (=0) this round. */
-    int VISITEDBYCHIPS_TO_INIT_ART;  /* This is a flag used to generate survival curves for ART initiation. */
-    int NCHIPSVISITS;                /* Records the number of visits a person has had by CHiPs throughout their life. */
-
-    int PC_cohort_index;             /* -1 if not in a cohort. Otherwise if in PC0 this is a number in the range 0..(N_PC0-1).
-                                        For PC12N we signify that it is PC12N by making it a number 100,000...(100,000+N_PC12N-1) as there are <100,000 in PC0 in each community.
-                                        Similarly for PC24N it is a number 200,000...(200,000_NPC24N-1). */
-    ////individual *age_list_ptr; /* This is a pointer to the place in the age list where the pointer to this person is (ie if you go to this address you will find a pointer to this structure). */
-    ////////////////////////////////////////////////
-    /* Do we include the following here:
-       - member of household? (particularly pmtct)
-       - socioeconomic_status, education/literacy (as a proxy of risk?);
-       - clusternumber (includes which arm in, which country).
-       - country; // 1 = Zambia, 2 = South Africa. (can ignore if have cluster number)
-       - HSV;  1 = HSV2 +ve, 0 = HSV2 -ve.
-       - healthcareutilization; // Includes VMMC, PMTCT, non-CHiPs HIV testing;
-       - treatment
-       - adherence; // Expected level of adherence to ART, loss-to-follow-up, etc.
-       - double spatial_coords[2]; // Think of a simple measure (e.g. distance to travel to healthcare centre, time to travel to health-care centre) which we can get in practice.
-     */
-
-    double immune_biomarker; // Value of immune biomarker (e.g. Kassanjee et al., 2017)
-    double t_vu; // Time of becoming virally unsuppressed
+    /* @brief Whether a person has been visited by CHiPs (=1) or not (=0) this round. */
+    int VISITED_BY_CHIPS_THISROUND;
+    
+    /** @brief Flag used to generate survival curves for ART initiation */
+    int VISITEDBYCHIPS_TO_INIT_ART;
+    
+    /** @brief Number of visits a person has had by CHiPs throughout their life */
+    int NCHIPSVISITS;
+    
+    /** @brief Index of individual in the PC cohort (if in the PC cohort)
+     * @details If in PC0 this is a number in the range 0..(N_PC0-1). -1 if not in a cohort.
+     * For PC12N we signify that it is PC12N by making it a number 100,000...(100,000+N_PC12N-1)
+     * as there are <100,000 in PC0 in each community. Similarly for PC24N it is a number
+     * 200,000...(200,000_NPC24N-1). */
+    int PC_cohort_index;
+    
+    /** @brief Value of immune biomarker for recency of infection
+    @details See e.g. Kassanjee et al., 2017 */
+    double immune_biomarker;
+    
+    /** @brief Time individual becomes virally unsuppressed */
+    double t_vu;
 };
 
 /** @brief Structure containing chips-related parameters */
@@ -168,18 +336,21 @@ typedef struct{
 
 /** @brief Structure storing information on DHS rounds */
 typedef struct{
+    /** @brief Number of DHS rounds 
+    @details Note: need to check that @ref NDHSROUNDS_MAX is bigger than `NDHSROUNDS`*/
     int NDHSROUNDS;
+    
+    /** @brief Years of each indexed DHS round */
     int DHS_YEAR[NDHSROUNDS_MAX];
-    /* Note: need to check that NDHSROUNDS_MAX is bigger than NDHSROUNDS when running code. */
 } DHS_param_struct;
 
 
 /** @brief Structure containing all model parameters */
 typedef struct {
 
-    long rng_seed; /* This is the C random seed used for each run. */
+    /** @brief C random seed used for each run. */
+    long rng_seed;
 
-    /********** demographics **********/
     double fertility_rate_by_age[N_AGE_UNPD_FERTILITY][N_UNPD_TIMEPOINTS]; /* UNPD outputs fertility for N_AGE_UNPD_FERTILITY=7 age groups at N_UNPD_TIMEPOINTS=30 time points (every 5 years from 1950-55 to 2095-2100). */
     /* These are based on regression of ln(UNPD estimates). UNPD gives estimates by 5 years age groups 0-4,...75-79 and then 80+. */
     double mortality_rate_by_gender_age_intercept[N_GENDER][N_AGE_UNPD_MORTALITY];
@@ -873,31 +1044,39 @@ typedef struct{ /* structure which contains all the strings that are outputted *
     long PC_NVS[NPATCHES][N_GENDER][PC_AGE_RANGE_MAX][NPC_ROUNDS];
 } output_struct;
 
-
+/** @brief Structure for storing character strings used to construct file paths
+ * @details These character strings are used repeatedly because many files have a similar 
+ * pattern in their file name, depending on whether they are output for each patch, for all 
+ * patches together.*/
 typedef struct{
-
-    /* Label for files where data from each patch is stored in a separate file: */
+    /** @brief Label for files where data from each patch is stored in a separate file*/
     char filename_label_bypatch[NPATCHES][LONGSTRINGLENGTH];
-    /* Label for files where  data from all patches is stored in a single file.
-     * Used in demographics debugging NBirthsNNewAdultsNdeaths*.csv files */
+    
+    /** @brief Label for files where  data from all patches is stored in a single file.
+     * @details Used in demographics debugging `NBirthsNNewAdultsNdeaths*.csv` files */
     char filename_label_allpatches[LONGSTRINGLENGTH];
 
-    /* Label for files where  data from all patches is stored in a single file.
-     * Used in partnership debugging files */
+    /** @brief Label for files where  data from all patches is stored in a single file.
+     * @details Used in partnership debugging files */
     char filename_label_allpatches_witharm_communityno[LONGSTRINGLENGTH];
-
 } file_label_struct;
 
 
+/** @brief Structure for storing actual output file labels */
 typedef struct{
-
-    /* Main outputs: */
+    /** @brief Annual outputs file pointer for each patch*/
     FILE *ANNUAL_OUTPUT_FILE[NPATCHES];
+    
+    /** @brief Annual outputs file label for each patch*/
     char filename_annual_output[NPATCHES][LONGSTRINGLENGTH];
 
+    /** @brief Timestep outputs file pointer for each patch*/
     FILE *TIMESTEP_OUTPUT_FILE[NPATCHES];
-    /* These will use the same file pointer (as we close at the end of the relevant function we can recycle). */
+    
+    /** @brief Timestep outputs (whole population) file label for each patch*/
     char filename_timestep_output[NPATCHES][LONGSTRINGLENGTH];
+    
+    /** @brief Timestep outputs (PC population) file label for each patch*/
     char filename_timestep_output_PConly[NPATCHES][LONGSTRINGLENGTH];
 
     FILE *TIMESTEP_AGE_OUTPUT_FILE[NPATCHES];
