@@ -65,24 +65,7 @@ int carry_out_processes(int t0, fitting_data_struct *fitting_data, patch_struct 
             patch[p].py_n_positive_not_on_art[icd4] = 0;
         }
     }
-
-    long npop_check;
-    int g, ai, aa;
     
-    for(p = 0; p < NPATCHES; p++){
-        npop_check = 0;
-        for(g = 0; g < N_GENDER; g++){
-            for(aa = AGE_ADULT; aa < MAX_AGE; aa++){
-                ai = aa + patch[p].age_list->age_list_by_gender[g]->youngest_age_group_index;
-                while(ai > (MAX_AGE - AGE_ADULT - 1)){
-                    ai = ai - (MAX_AGE - AGE_ADULT);
-                }
-                npop_check += patch[p].age_list->age_list_by_gender[g]->number_per_age_group[ai];
-            }
-            npop_check += patch[p].age_list->age_list_by_gender[g]->number_oldest_age_group;
-        }
-    }
-
     for(t_step = 0; t_step < N_TIME_STEP_PER_YEAR; t_step++){
 
         if(

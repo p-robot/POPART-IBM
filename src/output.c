@@ -868,7 +868,6 @@ void store_annual_outputs(patch_struct *patch, int p, output_struct *output,
     long npop_m = 0;
     long npop_f = 0;
     long npop;
-    long npop_check = 0;
     long npositive_m=0;
     long npositive_f=0;
     long npositive;
@@ -894,7 +893,6 @@ void store_annual_outputs(patch_struct *patch, int p, output_struct *output,
     long npos_r[N_RISK] = {0,0,0};
     int current_cd4_guidelines = art_cd4_eligibility_group(patch[p].param,(double) year);
 
-    double prop_annual_acute;
     double prophivposonart;
 
     /* Temporary store of data from current year. */
@@ -922,17 +920,6 @@ void store_annual_outputs(patch_struct *patch, int p, output_struct *output,
     }else{
         MINAGE_COUNTED = 18 - AGE_ADULT;
         MAX_AGE_COUNTED = 45 - AGE_ADULT;
-    }
-
-    for(g = 0; g < N_GENDER; g++){
-        for(aa = MINAGE_COUNTED; aa < MAX_AGE_COUNTED; aa++){
-            ai = aa + patch[p].age_list->age_list_by_gender[g]->youngest_age_group_index;
-            while (ai>(MAX_AGE-AGE_ADULT-1)){
-                ai = ai - (MAX_AGE-AGE_ADULT);
-            }
-            npop_check += patch[p].age_list->age_list_by_gender[g]->number_per_age_group[ai];
-        }
-        npop_check += patch[p].age_list->age_list_by_gender[g]->number_oldest_age_group;
     }
 
     for(g = 0; g < N_GENDER; g++){
@@ -1028,15 +1015,6 @@ void store_annual_outputs(patch_struct *patch, int p, output_struct *output,
     
     /* Store number of positive people in n_infected_total: */
     *n_infected_total = npositive;
-
-    if (patch[p].PANGEA_N_ANNUALINFECTIONS > 0){
-        
-        prop_annual_acute = patch[p].PANGEA_N_ANNUALACUTEINFECTIONS/
-            (1.0*patch[p].PANGEA_N_ANNUALINFECTIONS);
-        
-    }else{
-        prop_annual_acute = 0.0;
-    }
     
     if (npositive > 0){
         prophivposonart = (NArt_m + NArt_f)/(1.0*npositive);
@@ -3243,9 +3221,9 @@ void write_hivpos_individual_data(file_struct *file_data_store, individual *indi
     fclose(file_data_store->HIVSURVIVAL_INDIVIDUALDATA_FILE);
 }
 
-
-
-void print_partnership_network(file_struct *file_data_store, char *output_file_directory, file_label_struct *file_labels, individual *individual_population, long id_counter, int year, int p){
+void print_partnership_network(file_struct *file_data_store, char *output_file_directory,
+        file_label_struct *file_labels, individual *individual_population,
+        long id_counter, int year, int p){
     long n_id, gender;
     int n_partners, i_partner;
     long partner_id;
@@ -3254,7 +3232,8 @@ void print_partnership_network(file_struct *file_data_store, char *output_file_d
 
     FILE *PARTNERSHIP_NETWORK_OUTFILE;
     char partnership_network_outfilename[LONGSTRINGLENGTH];
-    make_filenames_for_snapshot(partnership_network_outfilename, output_file_directory, file_labels, year, p, "Partnership_network");
+    make_filenames_for_snapshot(partnership_network_outfilename, output_file_directory,
+        file_labels, year, p, "Partnership_network");
     //char temp[100]; /* Temporary store to convert numbers etc. */
 
     PARTNERSHIP_NETWORK_OUTFILE = fopen(partnership_network_outfilename,"w");
@@ -3268,26 +3247,22 @@ void print_partnership_network(file_struct *file_data_store, char *output_file_d
     for (n_id=0; n_id<id_counter; n_id++){
         /* Check that the person is not dead: */
         if (individual_population[n_id].cd4!=DEAD){
-
             gender = individual_population[n_id].gender;
-
             n_partners = individual_population[n_id].n_partners;
-
             for(i_partner=0;i_partner<n_partners;i_partner++){
                 partner_id = individual_population[n_id].partner_pairs[i_partner]->ptr[1-gender]->id;
                 partner_patch = individual_population[n_id].partner_pairs[i_partner]->ptr[1-gender]->patch_no;
                 duration = individual_population[n_id].partner_pairs[i_partner]->duration_in_time_steps * TIME_STEP;
                 if (partner_id>=n_id){
-                    //fprintf("%li %li %i %6.4f\n",n_id,partner_id,partner_patch==p,duration);
-                    fprintf(PARTNERSHIP_NETWORK_OUTFILE,"%li %li %i %6.4f\n",n_id,partner_id,partner_patch==p,duration);
+                    fprintf(PARTNERSHIP_NETWORK_OUTFILE,
+                        "%li %li %i %6.4f\n",
+                        n_id,partner_id,partner_patch==p,duration);
                 }
             }
         }
     }
-
     fclose(PARTNERSHIP_NETWORK_OUTFILE);
 }
-
 
 
 /* Count the number of partnerships at a given time outside the community by gender x risk (and the total number of partnerships). */
@@ -3951,7 +3926,6 @@ void write_chips_data_annual(patch_struct *patch, int p, int year, int t_step, i
     long NCHIPS_HIVAWARE[N_GENDER][MAX_AGE-AGE_CHIPS+1];
     long NCHIPS_ONART[N_GENDER][MAX_AGE-AGE_CHIPS+1];
     long NCHIPS_VS[N_GENDER][MAX_AGE-AGE_CHIPS+1];
-    long total_chips_visits = 0;
 
     /* Fairly arbitrarily, we store the number of people who have been visited 0, 1, 2, 3, 4, 5+ times.The upper limit should
      * be bigger than the 4 visits scheduled in PopART, but in principle this could be more than 5 visits - you just need
@@ -3990,17 +3964,7 @@ void write_chips_data_annual(patch_struct *patch, int p, int year, int t_step, i
             nvisits_distribution[g][v] = 0;
     }
 
-
-    int youngest_age_eligible_in_this_chips_round;
     int current_chips_round = get_chips_round(patch[p].param, year, t_step);
-    if (POPART_FINISHED==1)
-        youngest_age_eligible_in_this_chips_round = AGE_CHIPS;
-    else
-        youngest_age_eligible_in_this_chips_round = AGE_CHIPS + (year-patch[p].param->CHIPS_START_YEAR[current_chips_round]);
-    //printf("time = %6.4f CHISPAGE=%i\n",year+t_step*TIME_STEP,youngest_age_eligible_in_this_chips_round);
-    //fflush(stdout);
-
-
     int NDIED = 0;
 
     for (n_id=0; n_id<patch[p].id_counter; n_id++){
@@ -4045,7 +4009,6 @@ void write_chips_data_annual(patch_struct *patch, int p, int year, int t_step, i
                         nvisits_distribution[g][MAXVISITSRECORDED]++;
                     else
                         nvisits_distribution[g][v]++;
-                    total_chips_visits += v; /* Use this to calculate mean number of visits per person in CHiPs denominator. */
                     if(person->VISITEDBYCHIPS_TO_INIT_ART)
                         n_chips_start_art++;
                 }
@@ -4180,21 +4143,15 @@ void store_cost_effectiveness_outputs(patch_struct *patch, int p, output_struct 
     
     int year_idx = year - patch[p].param->start_time_simul;
     
-    int aa, g, r, ai;
     long n_id;
-    long npositive_wrong=0;
-    long nincident=0;
     long npop_m = 0;
     long npop_f = 0;
     long npop;
-    long npop_check = 0;
     long npositive_m=0;
     long npositive_m_cd4[NCD4];
     long npositive_f=0;
     long npositive_f_cd4[NCD4];
     long npositive;
-    long npositive_dead = 0;
-    long n_dead = 0;
     int i;
     
     long NArt_m = 0;
@@ -4222,48 +4179,8 @@ void store_cost_effectiveness_outputs(patch_struct *patch, int p, output_struct 
     
     int current_cd4_guidelines = art_cd4_eligibility_group(patch[p].param,(double) year);
 
-    double prop_annual_acute;
-    double prophivposonart;
-
     /* Temporary store of data from current year. */
     char temp_string[10000];
-    
-    int MINAGE_COUNTED = 0;
-    int MAX_AGE_COUNTED = MAX_AGE - AGE_ADULT;
-    
-    for(g = 0; g < N_GENDER; g++){
-        for(aa = MINAGE_COUNTED; aa < MAX_AGE_COUNTED; aa++){
-            ai = aa + patch[p].age_list->age_list_by_gender[g]->youngest_age_group_index;
-            while (ai>(MAX_AGE-AGE_ADULT-1)){
-                ai = ai - (MAX_AGE-AGE_ADULT);
-            }
-            npop_check += patch[p].age_list->age_list_by_gender[g]->number_per_age_group[ai];
-        }
-        npop_check += patch[p].age_list->age_list_by_gender[g]->number_oldest_age_group;
-    }
-
-    for(g = 0; g < N_GENDER; g++){
-        for(r = 0; r < N_RISK; r++){
-            for(aa = MINAGE_COUNTED; aa < MAX_AGE_COUNTED; aa++){
-                ai = aa + patch[p].n_infected->youngest_age_group_index;
-                while(ai > (MAX_AGE - AGE_ADULT - 1)){
-                    ai = ai - (MAX_AGE - AGE_ADULT);
-                }
-                
-                /* NOTE: if we are getting prevalence by age group we have to offset the aa by
-                n_infected->youngest_age_group_index. */
-                npositive_wrong += patch[p].n_infected->pop_size_per_gender_age1_risk[g][ai][r];
-
-                ai = aa + patch[p].n_newly_infected->youngest_age_group_index;
-                while (ai > (MAX_AGE - AGE_ADULT - 1)){
-                    ai = ai - (MAX_AGE - AGE_ADULT);
-                }
-                nincident += patch[p].n_newly_infected->pop_size_per_gender_age1_risk[g][ai][r];
-            }
-            npositive_wrong += patch[p].n_infected->pop_size_oldest_age_group_gender_risk[g][r];
-            nincident += patch[p].n_newly_infected->pop_size_oldest_age_group_gender_risk[g][r];
-        }
-    }
     
     /* This if statement determines if we are just looking at PC stuff: */
     for (n_id = 0; n_id < patch[p].id_counter; n_id++){
@@ -4282,11 +4199,6 @@ void store_cost_effectiveness_outputs(patch_struct *patch, int p, output_struct 
                     &npositive_f, &NNeedART_f, &NArt_f, npositive_f_cd4, NNotOnArt_f_cd4,
                     NOnArt_f_cd4, current_cd4_guidelines);
             }
-        }else{
-            n_dead += 1;
-            if (patch[p].individual_population[n_id].HIV_status > 0){
-                npositive_dead += 1;
-            }
         }
     }
     npop = npop_m + npop_f;
@@ -4294,21 +4206,6 @@ void store_cost_effectiveness_outputs(patch_struct *patch, int p, output_struct 
     
     /* Store number of positive people in n_infected_total: */
     *n_infected_total = npositive;
-
-    if (patch[p].PANGEA_N_ANNUALINFECTIONS > 0){
-        
-        prop_annual_acute = patch[p].PANGEA_N_ANNUALACUTEINFECTIONS/
-            (1.0*patch[p].PANGEA_N_ANNUALINFECTIONS);
-        
-    }else{
-        prop_annual_acute = 0.0;
-    }
-    
-    if (npositive > 0){
-        prophivposonart = (NArt_m + NArt_f)/(1.0*npositive);
-    }else{
-        prophivposonart = 0.0;
-    }
     
     sprintf(temp_string,
         "%d,%d,%i,%8.6f,%8.6f,\

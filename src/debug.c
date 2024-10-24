@@ -1727,12 +1727,10 @@ void reset_annual_chips_visit_counter(age_list_struct *age_list){
 void print_chips_statistics_using_age_list(age_list_struct *age_list, double t){
     int g,aa,ai,i, v;
     long n_visited_by_chips_this_round = 0;
-    long total_chips_visits = 0;
     int MAXVISITSRECORDED = 5;
     long *nvisits_distribution[N_GENDER];
     long n_chips_start_art = 0;
     long denom_chips_visits[N_GENDER]; /* Number of M/F eligible to be visited by ChiPs this round. */
-    long denom_chips_visits_total = 0; /* Sum by gender of denom_chips_visits. */
     individual *person;            /* Temporary pointer to person currently being used, to make code more readable. As pointing to existing memory no malloc used. */
     for (g=0;g<N_GENDER;g++){
         nvisits_distribution[g] = malloc((MAXVISITSRECORDED+1)*sizeof(long)); /* Note that we go from 0..MAXVISITSRECORDED. */
@@ -1759,7 +1757,6 @@ void print_chips_statistics_using_age_list(age_list_struct *age_list, double t){
                     n_visited_by_chips_this_round += person->VISITED_BY_CHIPS_THISROUND;
                     /* v is the lifetime number of visits this individual has had by CHiPs. */
                     v = person->NCHIPSVISITS;
-                    total_chips_visits += v; /* Use this to calculate mean number of visits per person in CHiPs denominator. */
                     if (v>=MAXVISITSRECORDED)
                         nvisits_distribution[g][MAXVISITSRECORDED]++;
                     else
@@ -1774,9 +1771,6 @@ void print_chips_statistics_using_age_list(age_list_struct *age_list, double t){
     }
     printf("Number died = %i\n",NDIED);
     printf("%6.4lf n_thisround=%ld ",t,n_visited_by_chips_this_round);
-    for (g=0;g<N_GENDER;g++){
-        denom_chips_visits_total += denom_chips_visits[g];
-    }
     for (v=0;v<=MAXVISITSRECORDED;v++)
         for (g=0;g<N_GENDER;g++)
             printf("%ld ",nvisits_distribution[g][v]);
@@ -1805,7 +1799,6 @@ void print_chips_statistics_using_age_list(age_list_struct *age_list, double t){
 void print_chips_statistics_using_chipsonly(patch_struct *patch, int p, double t){
     int g,ac,i, v;
     long n_visited_by_chips_this_round = 0;
-    long total_chips_visits = 0;
 
     /* Store the number of people who have been visited 0, 1, 2, 3, 4, 5+ times.
     The upper limit should be bigger than the 4 visits scheduled in PopART, 
@@ -1836,7 +1829,6 @@ void print_chips_statistics_using_chipsonly(patch_struct *patch, int p, double t
                     patch[p].individual_population[patch[p].chips_sample->list_ids_to_visit[g][ac][i]].VISITED_BY_CHIPS_THISROUND;
                 /* v is the lifetime number of visits this individual has had by CHiPs. */
                 v = patch[p].individual_population[patch[p].chips_sample->list_ids_to_visit[g][ac][i]].NCHIPSVISITS;
-                total_chips_visits += v; /* Use this to calculate mean number of visits per person in CHiPs denominator. */
                 if (v>=MAXVISITSRECORDED)
                     nvisits_distribution[g][MAXVISITSRECORDED]++;
                 else
